@@ -545,23 +545,16 @@ function renderMall(y, height, gameData) {
 
 // 触摸事件处理
 function handleTouch(x, y, gameData, activeTab) {
-  // 检测底部导航点击（允许一定的超出范围）
+  // 检测底部导航点击（优先检查，允许 Y 超出 Canvas）
   const navY = CONFIG.height - CONFIG.navBarHeight;
   
-  // 底部导航：Y >= navY 且 X 在范围内
-  // 微信开发者工具可能会有坐标偏移，所以不检查上界
+  // 底部导航：Y >= navY 且 X 在范围内（微信开发者工具坐标可能超出 Canvas）
   if (y >= navY && x >= 0 && x <= CONFIG.width) {
     const itemWidth = CONFIG.width / 4;
     const tabIndex = Math.floor(x / itemWidth);
     const tabs = ['home', 'business', 'social', 'mall'];
     console.log(`[底部导航] Y:${navY}, 点击 Y:${y}, Tab 索引:${tabIndex}, 结果:${tabs[tabIndex]}`);
     return { type: 'tab', tab: tabs[tabIndex] };
-  }
-  
-  // 如果 Y 远小于 0，忽略
-  if (y < -50) {
-    console.log(`[触摸] Y 异常 (${y.toFixed(1)})`);
-    return null;
   }
   
   // 经营 Tab 子导航检测（严格边界）
