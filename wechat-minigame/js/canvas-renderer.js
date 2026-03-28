@@ -556,10 +556,10 @@ function handleTouch(x, y, gameData, activeTab) {
     return { type: 'tab', tab: tabs[tabIndex] };
   }
   
-  // 经营 Tab 子导航检测（放宽 Y 范围，适配微信开发者工具）
+  // 经营 Tab 子导航检测（精确范围）
   if (activeTab === 'business') {
-    // 渲染位置：Y=84-120，但微信开发者工具有偏移，放宽到 80-160
-    if (y >= 80 && y <= 160 && x >= 16 && x <= CONFIG.width - 16) {
+    // 渲染位置 Y=84-120，考虑微信偏移，检测范围 80-140
+    if (y >= 80 && y <= 140 && x >= 16 && x <= CONFIG.width - 16) {
       const subTabWidth = (CONFIG.width - 32) / 3;
       const subTabIndex = Math.floor((x - 16) / subTabWidth);
       const subTabs = ['restaurant', 'kitchen', 'delivery'];
@@ -615,10 +615,10 @@ function handleTouch(x, y, gameData, activeTab) {
     }
   }
   
-  // 社交 Tab 子导航检测（放宽 Y 范围）
+  // 社交 Tab 子导航检测（精确范围）
   if (activeTab === 'social') {
-    // 渲染位置：Y=84-120，放宽到 80-160
-    if (y >= 80 && y <= 160 && x >= 16 && x <= CONFIG.width - 16) {
+    // 渲染位置 Y=84-120，考虑微信偏移，检测范围 80-140
+    if (y >= 80 && y <= 140 && x >= 16 && x <= CONFIG.width - 16) {
       const subTabWidth = (CONFIG.width - 32) / 3;
       const subTabIndex = Math.floor((x - 16) / subTabWidth);
       const subTabs = ['friends', 'rankings', 'events'];
@@ -638,10 +638,10 @@ function handleTouch(x, y, gameData, activeTab) {
     }
   }
   
-  // 商城 Tab 子导航检测（放宽 Y 范围）
+  // 商城 Tab 子导航检测（精确范围）
   if (activeTab === 'mall') {
-    // 渲染位置：Y=84-120，放宽到 80-160
-    if (y >= 80 && y <= 160 && x >= 16 && x <= CONFIG.width - 16) {
+    // 渲染位置 Y=84-120，考虑微信偏移，检测范围 80-140
+    if (y >= 80 && y <= 140 && x >= 16 && x <= CONFIG.width - 16) {
       const subTabWidth = (CONFIG.width - 32) / 3;
       const subTabIndex = Math.floor((x - 16) / subTabWidth);
       const subTabs = ['recommend', 'items', 'decorations'];
