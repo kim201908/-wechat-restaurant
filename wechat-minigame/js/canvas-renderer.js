@@ -276,13 +276,35 @@ function renderHome(y, height, gameData) {
   ctx.textBaseline = 'top';
   ctx.fillText('🏠 首页', 16, y + 16);
   
-  // 餐厅场景占位
+  // 餐厅场景可视化
   ctx.fillStyle = '#87CEEB';
-  ctx.fillRect(16, y + 50, CONFIG.width - 32, 200);
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = '14px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('餐厅场景（开发中）', CONFIG.width / 2, y + 150);
+  drawRoundRect(16, y + 50, CONFIG.width - 32, 200, 8);
+  ctx.fill();
+  
+  // 地板
+  ctx.fillStyle = '#DEB887';
+  drawRoundRect(26, y + 130, CONFIG.width - 52, 110, 8);
+  ctx.fill();
+  
+  // 显示已购买的家具
+  if (gameData.furnitures && gameData.furnitures.length > 0) {
+    gameData.furnitures.forEach((f) => {
+      ctx.font = '28px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(f.icon, f.x + 10, y + 140 + f.y);
+    });
+  } else {
+    ctx.fillStyle = CONFIG.colors.gray;
+    ctx.font = '14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('去商店购买家具装饰餐厅吧！', CONFIG.width / 2, y + 150);
+  }
+  
+  // 顾客（简单表示）
+  ctx.font = '24px sans-serif';
+  for (let i = 0; i < Math.min(gameData.chefs.length, 3); i++) {
+    ctx.fillText('👤', 50 + i * 100, y + 180);
+  }
   
   // 统计卡片
   const statsY = y + 270;
