@@ -300,40 +300,41 @@ function renderHome(y, height, gameData) {
     ctx.fillText('去商店购买家具装饰餐厅吧！', CONFIG.width / 2, y + 150);
   }
   
-  // 顾客动画系统
+  // 顾客动画系统（带走路效果）
   if (gameData.customers && gameData.customers.length > 0) {
     gameData.customers.forEach(customer => {
       let emoji = '👤';
-      let status = '';
+      let bounce = 0;  // 上下颠簸效果
       
       switch (customer.state) {
         case 'entering':
-          emoji = '🚶';  // 走进来
-          status = '...';
+        case 'walking_out':
+        case 'leaving':
+          // 走路动画 - 左右摇摆 + 上下颠簸
+          emoji = '🚶';
+          bounce = Math.sin(customer.walkFrame) * 3;
           break;
         case 'ordering':
-          emoji = '👤';  // 站立
-          status = '📝';
+          emoji = '👤';
           break;
         case 'eating':
-          emoji = '😋';  // 吃东西
-          status = '🍽️';
-          break;
-        case 'leaving':
-          emoji = '🚶';  // 离开
-          status = '👋';
+          emoji = '😋';
           break;
       }
       
-      // 绘制顾客
+      // 绘制顾客（带颠簸效果）
       ctx.font = '32px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(emoji, customer.x, y + customer.y);
+      ctx.fillText(emoji, customer.x, y + customer.y + bounce);
       
-      // 绘制状态
+      // 绘制状态气泡
+      let status = '';
+      if (customer.state === 'ordering') status = '📝';
+      else if (customer.state === 'eating') status = '🍽️';
+      
       if (status) {
-        ctx.font = '16px sans-serif';
-        ctx.fillText(status, customer.x + 15, y + customer.y - 15);
+        ctx.font = '14px sans-serif';
+        ctx.fillText(status, customer.x + 15, y + customer.y - 20 + bounce);
       }
     });
   }
@@ -413,6 +414,12 @@ function renderBusinessRestaurant(y, height, gameData) {
   ctx.fillStyle = '#DEB887';
   drawRoundRect(26, y + 120, CONFIG.width - 52, 200, 8);
   ctx.fill();
+  
+  // 门口标识（右下角）
+  ctx.fillStyle = '#8B4513';
+  ctx.font = '24px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('🚪', CONFIG.width - 40, y + 280);
   
   // 显示已购买的家具（可拖拽）- 在预览区域内
   if (gameData.furnitures && gameData.furnitures.length > 0) {

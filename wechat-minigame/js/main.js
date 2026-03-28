@@ -614,9 +614,12 @@ function startCustomerAnimation() {
       if (Math.random() > 0.5) {
         GameGlobal.customers.push({
           id: Date.now(),
-          x: -30,  // 从左侧进入
-          y: 200,
-          state: 'entering',  // entering, ordering, eating, leaving
+          x: 320,  // 从右侧门口进入
+          y: 280,  // 门口位置
+          targetX: 50 + Math.random() * 200,  // 随机目标位置
+          targetY: 80 + Math.random() * 150,
+          state: 'entering',  // entering, walking_in, ordering, eating, leaving, walking_out
+          walkFrame: 0,  // 走路动画帧
           orderTime: 0,
           eatTime: 0
         });
@@ -624,39 +627,68 @@ function startCustomerAnimation() {
     }
   }, 3000);
   
-  // 每 100ms 更新顾客位置
+  // 每 50ms 更新顾客位置（更流畅）
   setInterval(() => {
     updateCustomers();
     render();
-  }, 100);
+  }, 50);
 }
 
 // 更新顾客状态
 function updateCustomers() {
   const canvasWidth = window.CanvasRenderer?.CONFIG?.width || 375;
+  const canvasHeight = 340;  // 预览区域高度
   
   GameGlobal.customers.forEach(customer => {
     switch (customer.state) {
       case 'entering':
-        customer.x += 2;
-        if (customer.x >= 50) {
+        // 从门口走进来
+        const dxEnter = customer.targetX - customer.x;
+        const dyEnter = customer.targetY - customer.y;
+        const distEnter = Math.sqrt(dxEnter * dxEnter + dyEnter * dyEnter);
+        
+        if (distEnter > 5) {
+          customer.x += (dxEnter / distEnter) * 1.5;
+          customer.y += (dyEnter / distEnter) * 1.5;
+          customer.walkFrame += 0.3;  // 走路动画
+        } else {
           customer.state = 'ordering';
           customer.orderTime = Date.now();
         }
         break;
+        
       case 'ordering':
         if (Date.now() - customer.orderTime > 2000) {
           customer.state = 'eating';
           customer.eatTime = Date.now();
         }
         break;
+        
       case 'eating':
         if (Date.now() - customer.eatTime > 3000) {
           customer.state = 'leaving';
         }
         break;
+        
       case 'leaving':
-        customer.x += 3;
+        // 走向门口（右下角）
+        const doorX = 320;
+        const doorY = 280;
+        const dxLeave = doorX - customer.x;
+        const dyLeave = doorY - customer.y;
+        const distLeave = Math.sqrt(dxLeave * dxLeave + dyLeave * dyLeave);
+        
+        if (distLeave > 5) {
+          customer.x += (dxLeave / distLeave) * 2;
+          customer.y += (dyLeave / distLeave) * 2;
+          customer.walkFrame += 0.3;  // 走路动画
+        } else {
+          customer.state = 'walking_out';
+        }
+        break;
+        
+      case 'walking_out':
+        customer.x += 2;  // 走出门口
         if (customer.x > canvasWidth + 30) {
           // 移除离开的顾客
           GameGlobal.customers = GameGlobal.customers.filter(c => c.id !== customer.id);
