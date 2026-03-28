@@ -620,5 +620,9 @@ window.CanvasRenderer = {
   init: initCanvas,
   render: render,
   handleTouch: handleTouch,
-  CONFIG: CONFIG
+  CONFIG: CONFIG,
+  // 辅助函数导出（供 social-mall.js 使用）
+  drawRoundRect: drawRoundRect,
+  drawButton: drawButton,
+  drawStatCard: drawStatCard
 };

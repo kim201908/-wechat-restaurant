@@ -3,6 +3,26 @@
  * v1.2 版本
  */
 
+// 从 CanvasRenderer 获取 CONFIG
+const CONFIG = window.CanvasRenderer?.CONFIG || {
+  width: 375,
+  height: 667,
+  statusBarHeight: 44,
+  navBarHeight: 60,
+  colors: {
+    primaryRed: '#C41E3A',
+    primaryGold: '#FFD700',
+    darkRed: '#8B0000',
+    cream: '#FFF8DC',
+    brown: '#8B4513',
+    darkBrown: '#5C3317',
+    green: '#228B22',
+    gray: '#696969',
+    purple: '#9370DB',
+    blue: '#4169E1'
+  }
+};
+
 // 渲染社交页
 function renderSocial(y, height, gameData) {
   // 子导航（好友/排行/活动）
@@ -425,6 +445,11 @@ function renderMallDecorations(y, height, gameData) {
   ctx.textAlign = 'center';
   ctx.fillText('装饰商城开发中', CONFIG.width / 2, y + 100);
 }
+
+// 辅助函数引用（从 canvas-renderer.js 获取）
+const drawRoundRect = window.CanvasRenderer?.drawRoundRect;
+const drawButton = window.CanvasRenderer?.drawButton;
+const drawStatCard = window.CanvasRenderer?.drawStatCard;
 
 // 导出
 window.SocialMallRenderer = {
