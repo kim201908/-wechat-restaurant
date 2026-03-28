@@ -604,10 +604,14 @@ function handleTouch(x, y, gameData, activeTab) {
         { icon: '🪴', name: '盆栽', price: 150, id: 'pot' }
       ];
       
-      const shopY = CONFIG.statusBarHeight + 290;
+      // 根据实际渲染位置调整检测范围
+      // 第一排 Y 约 340-405，第二排 Y 约 415-480
       furnitures.forEach((f, index) => {
         const fx = 16 + (index % 3) * 110;
-        const fy = shopY + Math.floor(index / 3) * 75;
+        // 第一排 y=334, 第二排 y=409
+        const fy = 334 + Math.floor(index / 3) * 75;
+        
+        // 放宽检测范围，确保能点到
         if (y >= fy && y <= fy + 65 && x >= fx && x <= fx + 100) {
           return { type: 'action', action: 'buyFurniture', furniture: f };
         }
