@@ -378,14 +378,27 @@ function renderBusinessRestaurant(y, height, gameData) {
   drawRoundRect(26, y + 120, CONFIG.width - 52, 110, 8);
   ctx.fill();
   
-  // 显示已购买的家具
+  // 显示已购买的家具（可拖拽）
   if (gameData.furnitures && gameData.furnitures.length > 0) {
     gameData.furnitures.forEach((f, index) => {
-      const x = 36 + (index % 4) * 70;
-      const fy = y + 130 + Math.floor(index / 4) * 45;
+      const fx = f.x || (36 + (index % 4) * 70);
+      const fy = f.y !== undefined ? f.y : Math.floor(index / 4) * 45;
+      
+      // 如果正在拖拽，绘制高亮
+      if (gameData.dragState.isDragging && gameData.dragState.dragIndex === index) {
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+        drawRoundRect(fx - 15, y + 130 + fy - 15, 50, 50, 8);
+        ctx.fill();
+      }
+      
       ctx.font = '28px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(f.icon, x, fy);
+      ctx.fillText(f.icon, fx, y + 140 + fy);
+      
+      // 提示文字
+      ctx.fillStyle = CONFIG.colors.gray;
+      ctx.font = '10px sans-serif';
+      ctx.fillText('👆 拖拽', fx, y + 165 + fy);
     });
   } else {
     ctx.fillStyle = CONFIG.colors.gray;
@@ -707,11 +720,44 @@ function handleTouch(x, y, gameData, activeTab) {
   return null;
 }
 
+// 检查是否点击了家具（用于拖拽）
+function checkFurnitureDrag(x, y, gameData) {
+  if (!gameData.furnitures || gameData.furnitures.length === 0) return null;
+  
+  // 预览区域的 Y 范围
+  const previewY = CONFIG.statusBarHeight + 40;
+  const previewHeight = 200;
+  
+  // 检查 Y 是否在预览区域内
+  if (y < previewY || y > previewY + previewHeight) return null;
+  
+  // 检查每个家具
+  for (let i = 0; i < gameData.furnitures.length; i++) {
+    const f = gameData.furnitures[i];
+    const fx = f.x || (36 + (i % 4) * 70);
+    const fy = f.y !== undefined ? f.y : Math.floor(i / 4) * 45;
+    const furnitureY = previewY + 130 + fy;
+    
+    // 检查是否点击在家具范围内（40x40 的区域）
+    if (x >= fx - 20 && x <= fx + 20 && y >= furnitureY - 20 && y <= furnitureY + 20) {
+      return {
+        isDragging: true,
+        dragIndex: i,
+        offsetX: x - fx,
+        offsetY: y - furnitureY
+      };
+    }
+  }
+  
+  return null;
+}
+
 // 导出
 window.CanvasRenderer = {
   init: initCanvas,
   render: render,
   handleTouch: handleTouch,
+  checkFurnitureDrag: checkFurnitureDrag,
   CONFIG: CONFIG,
   // 辅助函数导出（供 social-mall.js 使用）
   drawRoundRect: drawRoundRect,

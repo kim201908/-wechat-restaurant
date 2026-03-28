@@ -47,6 +47,14 @@ const GameGlobal = {
   // 家具数据
   furnitures: [],
   
+  // 拖拽状态
+  dragState: {
+    isDragging: false,
+    dragIndex: -1,
+    offsetX: 0,
+    offsetY: 0
+  },
+  
   // 社交子 Tab
   socialSubTab: 'friends',
   
@@ -251,30 +259,37 @@ function endOfDay() {
   });
 }
 
-// 绑定触摸事件（带详细调试）
+// 绑定触摸事件（带详细调试 + 拖拽）
 function bindTouchEvents() {
   if (typeof wx.onTouchStart !== 'function') {
     console.warn('[触摸事件] wx.onTouchStart 不可用，使用降级方案');
     return;
   }
   
+  // 触摸开始
   wx.onTouchStart((res) => {
     try {
       const touch = res.touches[0];
-      // 使用 pageX/pageY（不受 DPR 影响）
       const x = touch.pageX || touch.clientX;
       const y = touch.pageY || touch.clientY;
       
-      // 详细调试信息
       console.log('====================');
-      console.log(`[触摸] 坐标：(${x.toFixed(1)}, ${y.toFixed(1)})`);
-      console.log(`[触摸] Canvas: ${CanvasRenderer.CONFIG.width}x${CanvasRenderer.CONFIG.height}`);
-      console.log(`[触摸] 当前 Tab: ${GameGlobal.activeTab}`);
+      console.log(`[触摸开始] 坐标：(${x.toFixed(1)}, ${y.toFixed(1)})`);
+      
+      // 检查是否在拖拽家具（经营 - 餐厅 Tab）
+      if (GameGlobal.activeTab === 'business' && GameGlobal.businessSubTab === 'restaurant') {
+        const dragResult = CanvasRenderer.checkFurnitureDrag(x, y, GameGlobal);
+        if (dragResult) {
+          GameGlobal.dragState = dragResult;
+          console.log('[触摸开始] 开始拖拽家具');
+          return;
+        }
+      }
       
       const action = CanvasRenderer.handleTouch(x, y, GameGlobal, GameGlobal.activeTab);
       
       if (action) {
-        console.log(`[触摸] ✅ 检测到动作：${action.type}`, action);
+        console.log(`[触摸开始] ✅ 检测到动作：${action.type}`);
         
         if (action.type === 'tab') {
           GameGlobal.activeTab = action.tab;
@@ -291,11 +306,39 @@ function bindTouchEvents() {
         } else if (action.type === 'action') {
           handleAction(action);
         }
-      } else {
-        console.log('[触摸] ❌ 未检测到有效动作（点击空白区域）');
       }
     } catch (e) {
       console.error('[触摸事件] 处理错误:', e.message);
+    }
+  });
+  
+  // 触摸移动（拖拽）
+  wx.onTouchMove((res) => {
+    if (!GameGlobal.dragState.isDragging) return;
+    
+    try {
+      const touch = res.touches[0];
+      const x = touch.pageX || touch.clientX;
+      const y = touch.pageY || touch.clientY;
+      
+      // 更新家具位置
+      const furniture = GameGlobal.furnitures[GameGlobal.dragState.dragIndex];
+      if (furniture) {
+        furniture.x = x - GameGlobal.dragState.offsetX;
+        furniture.y = y - GameGlobal.dragState.offsetY - CanvasRenderer.CONFIG.statusBarHeight;
+        render();
+      }
+    } catch (e) {
+      console.error('[触摸移动] 错误:', e.message);
+    }
+  });
+  
+  // 触摸结束（释放拖拽）
+  wx.onTouchEnd(() => {
+    if (GameGlobal.dragState.isDragging) {
+      console.log('[触摸结束] 释放拖拽');
+      GameGlobal.dragState = { isDragging: false, dragIndex: -1, offsetX: 0, offsetY: 0 };
+      saveGame(); // 保存新位置
     }
   });
 }
