@@ -290,13 +290,17 @@ function bindTouchEvents() {
       }
       
       const action = CanvasRenderer.handleTouch(x, y, GameGlobal, GameGlobal.activeTab);
+      console.log('[handleTouch 返回] action =', action);
       
       if (action) {
-        console.log(`[触摸开始] ✅ 检测到动作：${action.type}`);
+        console.log(`[触摸开始] ✅ 检测到动作：${action.type}`, action);
         
         if (action.type === 'tab') {
+          console.log(`[Tab 切换] ${GameGlobal.activeTab} -> ${action.tab}`);
           GameGlobal.activeTab = action.tab;
+          console.log('[render 调用] 准备渲染');
           render();
+          console.log('[render 调用] 渲染完成');
         } else if (action.type === 'subtab') {
           if (action.tabGroup === 'business') {
             GameGlobal.businessSubTab = action.subtab;
@@ -309,6 +313,8 @@ function bindTouchEvents() {
         } else if (action.type === 'action') {
           handleAction(action);
         }
+      } else {
+        console.log('[触摸开始] ❌ 未检测到有效动作');
       }
     } catch (e) {
       console.error('[触摸事件] 处理错误:', e.message);
