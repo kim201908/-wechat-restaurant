@@ -914,7 +914,6 @@ window.CanvasRenderer = {
   handleTouch: handleTouch,
   checkFurnitureDrag: checkFurnitureDrag,
   CONFIG: CONFIG,
-  // 辅助函数导出（供 social-mall.js 使用）
   drawRoundRect: drawRoundRect,
   drawButton: drawButton,
   drawStatCard: drawStatCard
