@@ -82,15 +82,52 @@ const GameGlobal = {
   canvas: null
 };
 
+// 环境检测
+function checkEnvironment() {
+  const issues = [];
+  
+  // 检测 wx 对象
+  if (typeof wx === 'undefined') {
+    issues.push('wx 对象不存在，可能不在微信环境');
+  }
+  
+  // 检测 Canvas API
+  if (typeof wx.createCanvas !== 'function') {
+    issues.push('wx.createCanvas 不可用');
+  }
+  
+  if (issues.length > 0) {
+    console.warn('[环境检测] 潜在问题:', issues);
+    return false;
+  }
+  
+  console.log('[环境检测] ✅ 环境正常');
+  return true;
+}
+
 // 初始化游戏
 function init() {
   console.log('我的中餐厅 v1.2 Canvas 版启动');
+  
+  // 环境检测
+  if (!checkEnvironment()) {
+    console.error('[初始化] 环境检测失败，尝试继续初始化...');
+  }
+  
+  // 全局错误捕获
+  wx.onError && wx.onError((err) => {
+    console.error('[全局错误]', err);
+  });
   
   // 加载存档
   loadGame();
   
   // 初始化 Canvas
-  GameGlobal.canvas = CanvasRenderer.init();
+  try {
+    GameGlobal.canvas = CanvasRenderer.init();
+  } catch (e) {
+    console.error('[初始化] Canvas 初始化失败:', e);
+  }
   
   // 首次渲染
   render();
@@ -100,6 +137,8 @@ function init() {
   
   // 绑定触摸事件
   bindTouchEvents();
+  
+  console.log('[初始化] ✅ 游戏启动完成');
 }
 
 // 加载游戏存档
@@ -207,38 +246,50 @@ function endOfDay() {
   });
 }
 
-// 绑定触摸事件
+// 绑定触摸事件（带错误处理）
 function bindTouchEvents() {
+  if (typeof wx.onTouchStart !== 'function') {
+    console.warn('[触摸事件] wx.onTouchStart 不可用，使用降级方案');
+    return;
+  }
+  
   wx.onTouchStart((res) => {
-    const touch = res.touches[0];
-    const x = touch.clientX;
-    const y = touch.clientY;
-    
-    const action = CanvasRenderer.handleTouch(x, y, GameGlobal, GameGlobal.activeTab);
-    
-    if (action) {
-      if (action.type === 'tab') {
-        GameGlobal.activeTab = action.tab;
-        render();
-      } else if (action.type === 'subtab') {
-        if (action.tabGroup === 'business') {
-          GameGlobal.businessSubTab = action.subtab;
-        } else if (action.tabGroup === 'social') {
-          GameGlobal.socialSubTab = action.subtab;
-        } else if (action.tabGroup === 'mall') {
-          GameGlobal.mallSubTab = action.subtab;
+    try {
+      const touch = res.touches[0];
+      const x = touch.clientX;
+      const y = touch.clientY;
+      
+      const action = CanvasRenderer.handleTouch(x, y, GameGlobal, GameGlobal.activeTab);
+      
+      if (action) {
+        if (action.type === 'tab') {
+          GameGlobal.activeTab = action.tab;
+          render();
+        } else if (action.type === 'subtab') {
+          if (action.tabGroup === 'business') {
+            GameGlobal.businessSubTab = action.subtab;
+          } else if (action.tabGroup === 'social') {
+            GameGlobal.socialSubTab = action.subtab;
+          } else if (action.tabGroup === 'mall') {
+            GameGlobal.mallSubTab = action.subtab;
+          }
+          render();
+        } else if (action.type === 'action') {
+          handleAction(action);
         }
-        render();
-      } else if (action.type === 'action') {
-        handleAction(action);
       }
+    } catch (e) {
+      console.error('[触摸事件] 处理错误:', e.message);
     }
   });
 }
 
-// 处理动作
+// 处理动作（带错误处理）
 function handleAction(action) {
-  switch (action.action) {
+  try {
+    console.log('[动作]', action.action, action);
+    
+    switch (action.action) {
     case 'collectEarnings':
       const earnings = GameGlobal.chefs.length * 50;
       GameGlobal.player.gold += earnings;
@@ -379,6 +430,13 @@ function handleAction(action) {
         }
       });
       break;
+    }
+  } catch (e) {
+    console.error('[动作处理] 错误:', e.message);
+    wx.showToast({
+      title: '操作失败',
+      icon: 'none'
+    });
   }
 }
 

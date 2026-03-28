@@ -216,40 +216,52 @@ function drawStatCard(x, y, width, height, value, label) {
 
 // 主渲染循环
 function render(gameData, activeTab) {
-  if (!ctx) return;
-  
-  // 清空画布
-  ctx.clearRect(0, 0, CONFIG.width, CONFIG.height);
-  
-  // 绘制背景
-  drawBackground();
-  
-  // 绘制状态栏
-  drawStatusBar(gameData);
-  
-  // 根据当前 Tab 绘制内容
-  const contentY = CONFIG.statusBarHeight;
-  const contentHeight = CONFIG.height - CONFIG.statusBarHeight - CONFIG.navBarHeight;
-  
-  switch (activeTab) {
-    case 'home':
-      renderHome(contentY, contentHeight, gameData);
-      break;
-    case 'business':
-      renderBusiness(contentY, contentHeight, gameData);
-      break;
-    case 'social':
-      renderSocial(contentY, contentHeight, gameData);
-      break;
-    case 'mall':
-      renderMall(contentY, contentHeight, gameData);
-      break;
+  if (!ctx) {
+    console.error('[CanvasRenderer] ctx 未初始化，跳过渲染');
+    return;
   }
   
-  // 绘制底部导航
-  drawNavBar(activeTab);
-  
-  // 微信小游戏会自动渲染 Canvas，无需额外调用
+  try {
+    // 清空画布
+    ctx.clearRect(0, 0, CONFIG.width, CONFIG.height);
+    
+    // 绘制背景
+    drawBackground();
+    
+    // 绘制状态栏
+    drawStatusBar(gameData);
+    
+    // 根据当前 Tab 绘制内容
+    const contentY = CONFIG.statusBarHeight;
+    const contentHeight = CONFIG.height - CONFIG.statusBarHeight - CONFIG.navBarHeight;
+    
+    switch (activeTab) {
+      case 'home':
+        renderHome(contentY, contentHeight, gameData);
+        break;
+      case 'business':
+        renderBusiness(contentY, contentHeight, gameData);
+        break;
+      case 'social':
+        renderSocial(contentY, contentHeight, gameData);
+        break;
+      case 'mall':
+        renderMall(contentY, contentHeight, gameData);
+        break;
+    }
+    
+    // 绘制底部导航
+    drawNavBar(activeTab);
+    
+    // 微信小游戏会自动渲染 Canvas，无需额外调用
+  } catch (e) {
+    console.error('[CanvasRenderer] 渲染错误:', e.message);
+    // 兜底：显示错误信息
+    ctx.fillStyle = '#FF0000';
+    ctx.font = '14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('渲染错误：' + e.message, CONFIG.width / 2, CONFIG.height / 2);
+  }
 }
 
 // 渲染首页
