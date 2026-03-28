@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的中餐厅 - 测试版</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #f0f0f0;
+      font-family: sans-serif;
+    }
+    .container {
+      display: flex;
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .game-area {
+      flex: 1;
+    }
+    .test-panel {
+      width: 350px;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    canvas {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    .test-section {
+      margin-bottom: 20px;
+    }
+    .test-section h3 {
+      margin: 0 0 10px 0;
+      color: #333;
+      font-size: 14px;
+    }
+    .test-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+      font-size: 13px;
+    }
+    .status {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #ddd;
+    }
+    .status.pass { background: #4CAF50; }
+    .status.fail { background: #f44336; }
+    .status.testing { background: #FF9800; animation: blink 1s infinite; }
+    @keyframes blink {
+      50% { opacity: 0.5; }
+    }
+    button {
+      margin: 5px;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      background: #C41E3A;
+      color: white;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    button:hover {
+      background: #a01830;
+    }
+    .log {
+      background: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: monospace;
+    }
+    .log-item {
+      margin-bottom: 3px;
+    }
+    .log-item.error {
+      color: #f44336;
+    }
+    .log-item.success {
+      color: #4CAF50;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="game-area">
+      <canvas id="gameCanvas" width="375" height="667"></canvas>
+    </div>
+    <div class="test-panel">
+      <h2>🎮 功能测试面板</h2>
+      
+      <div class="test-section">
+        <h3>👩‍🍳 服务员上菜动画</h3>
+        <div class="test-item">
+          <div class="status" id="waiter-appear"></div>
+          <span>服务员出现</span>
+        </div>
+        <div class="test-item">
+          <div class="status" id="waiter-walk"></div>
+          <span>走向顾客</span>
+        </div>
+        <div class="test-item">
+          <div class="status" id="waiter-food"></div>
+          <span>端着菜 (🍽️)</span>
+        </div>
+        <div class="test-item">
+          <div class="status" id="customer-eat"></div>
+          <span>顾客开始用餐 (😋)</span>
+        </div>
+        <div class="test-item">
+          <div class="status" id="waiter-return"></div>
+          <span>服务员返回</span>
+        </div>
+        <button onclick="testWaiter()">🧪 测试服务员</button>
+      </div>
+      
+      <div class="test-section">
+        <h3>🚧 顾客避障系统</h3>
+        <div class="test-item">
+          <div class="status" id="furniture-place"></div>
+          <span>摆放家具</span>
+        </div>
+        <div class="test-item">
+          <div class="status" id="customer-detect"></div>
+          <span>检测家具</span>
+        </div>
+        <div class="test-item">
+          <div class="status" id="customer-avoid"></div>
+          <span>绕行家具</span>
+        </div>
+        <div class="test-item">
+          <div class="status" id="path-smooth"></div>
+          <span>路径平滑</span>
+        </div>
+        <button onclick="testAvoidance()">🧪 测试避障</button>
+      </div>
+      
+      <div class="test-section">
+        <h3>📊 性能监控</h3>
+        <div class="test-item">
+          <span>顾客数：<strong id="customer-count">0</strong></span>
+        </div>
+        <div class="test-item">
+          <span>FPS: <strong id="fps-count">0</strong></span>
+        </div>
+        <button onclick="addCustomers()">➕ 添加顾客</button>
+        <button onclick="clearCustomers()">🗑️ 清空顾客</button>
+      </div>
+      
+      <div class="test-section">
+        <h3>📝 错误日志</h3>
+        <div class="log" id="errorLog"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 模拟微信环境
+    window.wx = {
+      createCanvas: () => document.getElementById('gameCanvas'),
+      getStorageSync: (key) => localStorage.getItem(key),
+      setStorageSync: (key, value) => localStorage.setItem(key, value),
+      showToast: (opts) => console.log('[Toast]', opts.title),
+      showModal: (opts) => {
+        console.log('[Modal]', opts.title, opts.content);
+        if (opts.success) opts.success({ confirm: true });
+      },
+      onError: (cb) => window.onerror = cb
+    };
+    
+    // 日志系统
+    function log(msg, type = 'info') {
+      const logEl = document.getElementById('errorLog');
+      const item = document.createElement('div');
+      item.className = 'log-item ' + (type === 'error' ? 'error' : type === 'success' ? 'success' : '');
+      item.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logEl.appendChild(item);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+    
+    // 更新测试状态
+    function setTestStatus(id, status) {
+      const el = document.getElementById(id);
+      el.className = 'status ' + status;
+    }
+    
+    // FPS 计数器
+    let frameCount = 0;
+    let lastTime = performance.now();
+    function updateFPS() {
+      frameCount++;
+      const now = performance.now();
+      if (now - lastTime >= 1000) {
+        document.getElementById('fps-count').textContent = frameCount;
+        frameCount = 0;
+        lastTime = now;
+      }
+      requestAnimationFrame(updateFPS);
+    }
+    updateFPS();
+    
+    // 测试服务员
+    function testWaiter() {
+      log('开始测试服务员上菜动画...', 'info');
+      
+      // 添加一个顾客
+      if (!GameGlobal.customers) GameGlobal.customers = [];
+      GameGlobal.customers.push({
+        id: Date.now(),
+        x: 320,
+        y: 280,
+        targetX: 100,
+        targetY: 150,
+        state: 'entering',
+        walkFrame: 0,
+        waitFoodTime: 0,
+        eatTime: 0
+      });
+      
+      // 添加一个服务员
+      if (!GameGlobal.employees.waiters) GameGlobal.employees.waiters = [];
+      if (GameGlobal.employees.waiters.length === 0) {
+        GameGlobal.employees.waiters.push({
+          id: 1,
+          name: '小红',
+          level: 1,
+          speed: 10,
+          salary: 80,
+          x: 300,
+          y: 50,
+          state: 'idle',
+          walkFrame: 0,
+          servingCustomerId: null,
+          targetX: 0,
+          targetY: 0,
+          returnTargetX: 300,
+          returnTargetY: 50
+        });
+        log('✅ 服务员已添加', 'success');
+        setTestStatus('waiter-appear', 'pass');
+      }
+      
+      log('观察服务员是否从厨房出现并走向顾客...');
+    }
+    
+    // 测试避障
+    function testAvoidance() {
+      log('开始测试顾客避障系统...', 'info');
+      
+      // 添加家具
+      if (!GameGlobal.furnitures) GameGlobal.furnitures = [];
+      GameGlobal.furnitures.push({
+        id: 'table1',
+        icon: '🪑',
+        name: '餐桌',
+        x: 150,
+        y: 100
+      });
+      log('✅ 家具已摆放 (🪑)', 'success');
+      setTestStatus('furniture-place', 'pass');
+      
+      // 添加顾客
+      if (!GameGlobal.customers) GameGlobal.customers = [];
+      GameGlobal.customers.push({
+        id: Date.now(),
+        x: 320,
+        y: 280,
+        targetX: 50,
+        targetY: 100,
+        state: 'entering',
+        walkFrame: 0
+      });
+      
+      log('观察顾客是否绕行家具...');
+    }
+    
+    // 添加多个顾客
+    function addCustomers() {
+      if (!GameGlobal.customers) GameGlobal.customers = [];
+      for (let i = 0; i < 3; i++) {
+        GameGlobal.customers.push({
+          id: Date.now() + i,
+          x: 320,
+          y: 280 + i * 20,
+          targetX: 50 + Math.random() * 200,
+          targetY: 80 + Math.random() * 150,
+          state: 'entering',
+          walkFrame: 0
+        });
+      }
+      log(`✅ 添加了 3 个顾客`, 'success');
+    }
+    
+    // 清空顾客
+    function clearCustomers() {
+      GameGlobal.customers = [];
+      log('🗑️ 顾客已清空', 'info');
+    }
+    
+    // 更新顾客计数
+    setInterval(() => {
+      document.getElementById('customer-count').textContent = GameGlobal.customers?.length || 0;
+    }, 500);
+  </script>
+  
+  <!-- 导入游戏代码 -->
+  <script type="module" src="js/canvas-renderer.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
