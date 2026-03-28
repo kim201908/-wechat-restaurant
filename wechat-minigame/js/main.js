@@ -261,8 +261,9 @@ function bindTouchEvents() {
   wx.onTouchStart((res) => {
     try {
       const touch = res.touches[0];
-      const x = touch.clientX;
-      const y = touch.clientY;
+      // 使用 pageX/pageY（不受 DPR 影响）
+      const x = touch.pageX || touch.clientX;
+      const y = touch.pageY || touch.clientY;
       
       // 详细调试信息
       console.log('====================');
