@@ -1,0 +1,10 @@
+# 微信小游戏
+/userData/
+/.tea/
+
+# 开发工具
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
