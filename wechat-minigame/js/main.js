@@ -5,6 +5,7 @@
 
 // 导入渲染引擎
 import './canvas-renderer';
+import './social-mall';
 
 // 游戏全局状态
 const GameGlobal = {
@@ -43,6 +44,40 @@ const GameGlobal = {
   // 经营子 Tab
   businessSubTab: 'restaurant',
   
+  // 社交子 Tab
+  socialSubTab: 'friends',
+  
+  // 商城子 Tab
+  mallSubTab: 'recommend',
+  
+  // 社交数据
+  social: {
+    friendCode: 'MCR888',
+    friends: [
+      { name: '小明', restaurant: '川香阁', level: 15 },
+      { name: '小红', restaurant: '粤味馆', level: 12 }
+    ]
+  },
+  
+  // 活动数据
+  events: {
+    active: [
+      { name: '每日挑战', desc: '完成 100 个订单', reward: '💎×50', progress: 65, target: 100, limited: false },
+      { name: '周末特惠', desc: '累计收益 10000 金币', reward: '🪙×2000', progress: 7500, target: 10000, limited: true }
+    ],
+    completed: [
+      { name: '新店开业', reward: '🪙×1000' },
+      { name: '首位厨师', reward: '💎×20' }
+    ]
+  },
+  
+  // 商城数据
+  hasFirstCharge: false,
+  monthCard: {
+    isActive: false,
+    expireDate: ''
+  },
+  
   // Canvas
   canvas: null
 };
@@ -77,6 +112,10 @@ function loadGame() {
       Object.assign(GameGlobal.time, saved.time);
       if (saved.chefs) GameGlobal.chefs = saved.chefs;
       if (saved.dishes) GameGlobal.dishes = saved.dishes;
+      if (saved.social) GameGlobal.social = saved.social;
+      if (saved.events) GameGlobal.events = saved.events;
+      if (saved.hasFirstCharge !== undefined) GameGlobal.hasFirstCharge = saved.hasFirstCharge;
+      if (saved.monthCard) GameGlobal.monthCard = saved.monthCard;
       console.log('游戏存档加载成功');
     }
   } catch (e) {
@@ -91,7 +130,11 @@ function saveGame() {
       player: GameGlobal.player,
       time: GameGlobal.time,
       chefs: GameGlobal.chefs,
-      dishes: GameGlobal.dishes
+      dishes: GameGlobal.dishes,
+      social: GameGlobal.social,
+      events: GameGlobal.events,
+      hasFirstCharge: GameGlobal.hasFirstCharge,
+      monthCard: GameGlobal.monthCard
     }));
   } catch (e) {
     console.error('保存存档失败:', e);
@@ -178,7 +221,13 @@ function bindTouchEvents() {
         GameGlobal.activeTab = action.tab;
         render();
       } else if (action.type === 'subtab') {
-        GameGlobal.businessSubTab = action.subtab;
+        if (action.tabGroup === 'business') {
+          GameGlobal.businessSubTab = action.subtab;
+        } else if (action.tabGroup === 'social') {
+          GameGlobal.socialSubTab = action.subtab;
+        } else if (action.tabGroup === 'mall') {
+          GameGlobal.mallSubTab = action.subtab;
+        }
         render();
       } else if (action.type === 'action') {
         handleAction(action);
@@ -260,6 +309,75 @@ function handleAction(action) {
           icon: 'success'
         });
       }, 1000);
+      break;
+      
+    case 'copyFriendCode':
+      wx.setClipboardData({
+        data: GameGlobal.social.friendCode
+      });
+      wx.showToast({
+        title: '好友码已复制',
+        icon: 'success'
+      });
+      break;
+      
+    case 'buyFirstCharge':
+      wx.showModal({
+        title: '首充礼包',
+        content: '确认支付 ¥6？（模拟支付）',
+        success(res) {
+          if (res.confirm) {
+            GameGlobal.hasFirstCharge = true;
+            GameGlobal.player.gem += 180;
+            GameGlobal.player.gold += 5000;
+            wx.showToast({
+              title: '购买成功！',
+              icon: 'success'
+            });
+            saveGame();
+            render();
+          }
+        }
+      });
+      break;
+      
+    case 'buyMonthCard':
+      wx.showModal({
+        title: '尊享月卡',
+        content: '确认支付 ¥30？（模拟支付）',
+        success(res) {
+          if (res.confirm) {
+            GameGlobal.monthCard.isActive = true;
+            const expire = new Date();
+            expire.setDate(expire.getDate() + 30);
+            GameGlobal.monthCard.expireDate = expire.toISOString().split('T')[0];
+            wx.showToast({
+              title: '开通成功！',
+              icon: 'success'
+            });
+            saveGame();
+            render();
+          }
+        }
+      });
+      break;
+      
+    case 'buyDiamonds':
+      wx.showModal({
+        title: '充值钻石',
+        content: `确认支付 ¥${action.price} 购买 ${action.amount} 钻石？（模拟支付）`,
+        success(res) {
+          if (res.confirm) {
+            GameGlobal.player.gem += action.amount;
+            wx.showToast({
+              title: '充值成功！',
+              icon: 'success'
+            });
+            saveGame();
+            render();
+          }
+        }
+      });
       break;
   }
 }

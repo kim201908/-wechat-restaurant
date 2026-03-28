@@ -463,30 +463,18 @@ function renderBusinessDelivery(y, height, gameData) {
   ctx.fillText('暂无订单', CONFIG.width / 2, btnY + 70);
 }
 
-// 渲染社交页
+// 渲染社交页 - 转发到 social-mall.js
 function renderSocial(y, height, gameData) {
-  ctx.fillStyle = CONFIG.colors.darkBrown;
-  ctx.font = 'bold 18px sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText('👥 社交', 16, y + 16);
-  
-  ctx.fillStyle = CONFIG.colors.gray;
-  ctx.font = '14px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('好友系统（开发中）', CONFIG.width / 2, y + 100);
+  if (window.SocialMallRenderer) {
+    window.SocialMallRenderer.renderSocial(y, height, gameData);
+  }
 }
 
-// 渲染商城页
+// 渲染商城页 - 转发到 social-mall.js
 function renderMall(y, height, gameData) {
-  ctx.fillStyle = CONFIG.colors.darkBrown;
-  ctx.font = 'bold 18px sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText('💎 商城', 16, y + 16);
-  
-  ctx.fillStyle = CONFIG.colors.gray;
-  ctx.font = '14px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('充值系统（开发中）', CONFIG.width / 2, y + 100);
+  if (window.SocialMallRenderer) {
+    window.SocialMallRenderer.renderMall(y, height, gameData);
+  }
 }
 
 // 触摸事件处理
@@ -508,9 +496,75 @@ function handleTouch(x, y, gameData, activeTab) {
       const subTabIndex = Math.floor((x - 16) / subTabWidth);
       const subTabs = ['restaurant', 'kitchen', 'delivery'];
       if (subTabIndex >= 0 && subTabIndex < 3) {
-        return { type: 'subtab', subtab: subTabs[subTabIndex] };
+        return { type: 'subtab', subtab: subTabs[subTabIndex], tabGroup: 'business' };
       }
     }
+  }
+  
+  // 社交 Tab 子导航检测
+  if (activeTab === 'social') {
+    const subNavY = CONFIG.statusBarHeight + 40;
+    if (y >= subNavY && y <= subNavY + 36) {
+      const subTabWidth = (CONFIG.width - 32) / 3;
+      const subTabIndex = Math.floor((x - 16) / subTabWidth);
+      const subTabs = ['friends', 'rankings', 'events'];
+      if (subTabIndex >= 0 && subTabIndex < 3) {
+        return { type: 'subtab', subtab: subTabs[subTabIndex], tabGroup: 'social' };
+      }
+    }
+    
+    // 好友页：复制好友码按钮
+    if (gameData.socialSubTab === 'friends') {
+      const btnY = CONFIG.statusBarHeight + 75;
+      if (y >= btnY && y <= btnY + 36 && x >= 16 && x <= CONFIG.width - 16) {
+        return { type: 'action', action: 'copyFriendCode' };
+      }
+    }
+  }
+  
+  // 商城 Tab 子导航检测
+  if (activeTab === 'mall') {
+    const subNavY = CONFIG.statusBarHeight + 40;
+    if (y >= subNavY && y <= subNavY + 36) {
+      const subTabWidth = (CONFIG.width - 32) / 3;
+      const subTabIndex = Math.floor((x - 16) / subTabWidth);
+      const subTabs = ['recommend', 'items', 'decorations'];
+      if (subTabIndex >= 0 && subTabIndex < 3) {
+        return { type: 'subtab', subtab: subTabs[subTabIndex], tabGroup: 'mall' };
+      }
+    }
+    
+    // 推荐页：首充礼包购买
+    if (gameData.mallSubTab === 'recommend' && !gameData.hasFirstCharge) {
+      const btnY = CONFIG.statusBarHeight + 215;
+      if (y >= btnY && y <= btnY + 50 && x >= 16 && x <= CONFIG.width - 16) {
+        return { type: 'action', action: 'buyFirstCharge' };
+      }
+    }
+    
+    // 推荐页：月卡购买
+    const monthCardY = gameData.hasFirstCharge ? CONFIG.statusBarHeight + 290 : CONFIG.statusBarHeight + 290;
+    if (gameData.mallSubTab === 'recommend' && !gameData.monthCard.isActive) {
+      const btnY = monthCardY + 95;
+      if (y >= btnY && y <= btnY + 40 && x >= 16 && x <= CONFIG.width - 16) {
+        return { type: 'action', action: 'buyMonthCard' };
+      }
+    }
+    
+    // 推荐页：充值选项点击
+    const rechargeY = monthCardY + 130;
+    if (gameData.mallSubTab === 'recommend') {
+      for (let i = 0; i < 4; i++) {
+        const rx = 16 + (i % 2) * 170;
+        const ry = rechargeY + 30 + Math.floor(i / 2) * 90;
+        if (y >= ry && y <= ry + 80 && x >= rx && x <= rx + 160) {
+          const amounts = [60, 300, 980, 2480];
+          const prices = [6, 30, 98, 248];
+          return { type: 'action', action: 'buyDiamonds', amount: amounts[i], price: prices[i] };
+        }
+      }
+    }
+  }
     
     // 经营 - 厨房：雇佣厨师按钮
     if (gameData.businessSubTab === 'kitchen') {
