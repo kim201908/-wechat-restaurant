@@ -545,11 +545,11 @@ function renderMall(y, height, gameData) {
 
 // 触摸事件处理
 function handleTouch(x, y, gameData, activeTab) {
-  // 检测底部导航点击（优先检查，允许 Y 超出 Canvas）
+  // 检测底部导航点击（严格边界，避免误触）
   const navY = CONFIG.height - CONFIG.navBarHeight;
   
-  // 底部导航：Y >= navY 且 X 在范围内（微信开发者工具坐标可能超出 Canvas）
-  if (y >= navY && x >= 0 && x <= CONFIG.width) {
+  // 底部导航：Y >= 750 且 X 在范围内（给家具留出空间）
+  if (y >= 750 && x >= 0 && x <= CONFIG.width) {
     const itemWidth = CONFIG.width / 4;
     const tabIndex = Math.floor(x / itemWidth);
     const tabs = ['home', 'business', 'social', 'mall'];
@@ -604,13 +604,15 @@ function handleTouch(x, y, gameData, activeTab) {
         { icon: '🪴', name: '盆栽', price: 150, id: 'pot' }
       ];
       
-      // 用 for 循环替代 forEach，这样 return 才能返回 handleTouch
+      // 根据日志：第一排 Y=571，第二排 Y=678-692
+      // 第一排：550-625，第二排：625-750
       for (let i = 0; i < furnitures.length; i++) {
         const f = furnitures[i];
         const fx = 16 + (i % 3) * 110;
-        const fy = 550 + Math.floor(i / 3) * 75;
+        const fy = 520 + Math.floor(i / 3) * 100;
         
-        if (y >= fy && y <= fy + 75 && x >= fx && x <= fx + 100) {
+        // 放宽检测范围
+        if (y >= fy && y <= fy + 100 && x >= fx && x <= fx + 100) {
           return { type: 'action', action: 'buyFurniture', furniture: f };
         }
       }
