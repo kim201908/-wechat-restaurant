@@ -594,6 +594,8 @@ function handleTouch(x, y, gameData, activeTab) {
     }
     
     // 经营 - 餐厅：购买家具
+    console.log(`[家具检测] businessSubTab=${gameData.businessSubTab}, 点击 Y=${y}, X=${x}`);
+    
     if (gameData.businessSubTab === 'restaurant') {
       const furnitures = [
         { icon: '🪑', name: '餐桌', price: 500, id: 'table' },
@@ -605,16 +607,21 @@ function handleTouch(x, y, gameData, activeTab) {
       ];
       
       // 根据日志，点击 Y=584-605，说明实际渲染位置在 550-650 左右
-      // 第一排 Y 约 550-625，第二排 Y 约 625-700
       furnitures.forEach((f, index) => {
         const fx = 16 + (index % 3) * 110;
-        // 根据实际点击调整：第一排 550，第二排 625
         const fy = 550 + Math.floor(index / 3) * 75;
         
+        console.log(`[家具${index}] ${f.name} 位置：(${fx},${fy}), 点击：(${x},${y})`);
+        
         if (y >= fy && y <= fy + 75 && x >= fx && x <= fx + 100) {
+          console.log(`[家具购买] ✅ 点击到 ${f.name}`);
           return { type: 'action', action: 'buyFurniture', furniture: f };
         }
       });
+      
+      console.log('[家具购买] ❌ 未点击到任何家具');
+    } else {
+      console.log(`[家具检测] ❌ 当前不在餐厅 Tab，当前是：${gameData.businessSubTab}`);
     }
   }
   
