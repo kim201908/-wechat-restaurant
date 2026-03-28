@@ -706,31 +706,121 @@ function startCustomerAnimation() {
   }, 50);
 }
 
+// 检测家具障碍物
+function checkFurnitureCollision(x, y, radius = 20) {
+  if (!GameGlobal.furnitures || GameGlobal.furnitures.length === 0) {
+    return false;
+  }
+  
+  for (const furniture of GameGlobal.furnitures) {
+    const fx = furniture.x || 0;
+    const fy = furniture.y || 0;
+    // 家具在预览区域内的绝对位置
+    const furnitureAbsX = fx;
+    const furnitureAbsY = 40 + fy;
+    
+    // 检测碰撞（家具视为 40x40 的方块）
+    const dx = x - furnitureAbsX;
+    const dy = y - furnitureAbsY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    
+    if (dist < radius + 20) {  // 20 是家具半径
+      return true;
+    }
+  }
+  return false;
+}
+
+// 避障移动：检测障碍物并绕行
+function moveWithAvoidance(entity, targetX, targetY, speed = 1.5) {
+  const dx = targetX - entity.x;
+  const dy = targetY - entity.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  
+  if (dist > 5) {
+    // 计算下一步位置
+    const nextX = entity.x + (dx / dist) * speed;
+    const nextY = entity.y + (dy / dist) * speed;
+    
+    // 检测是否会碰撞
+    if (checkFurnitureCollision(nextX, nextY, 15)) {
+      // 有障碍，尝试绕行：垂直于目标方向移动
+      const perpendicularX = -dy / dist;
+      const perpendicularY = dx / dist;
+      
+      // 尝试左右两个方向
+      const leftX = entity.x + perpendicularX * speed;
+      const leftY = entity.y + perpendicularY * speed;
+      const rightX = entity.x - perpendicularX * speed;
+      const rightY = entity.y - perpendicularY * speed;
+      
+      if (!checkFurnitureCollision(leftX, leftY, 15)) {
+        entity.x = leftX;
+        entity.y = leftY;
+      } else if (!checkFurnitureCollision(rightX, rightY, 15)) {
+        entity.x = rightX;
+        entity.y = rightY;
+      } else {
+        // 都被挡住，尝试小幅度后退
+        entity.x -= (dx / dist) * 0.5;
+        entity.y -= (dy / dist) * 0.5;
+      }
+    } else {
+      // 无障碍，直接移动
+      entity.x = nextX;
+      entity.y = nextY;
+    }
+    
+    return true;  // 还在移动中
+  }
+  return false;  // 已到达目标
+}
+
 // 更新顾客状态
 function updateCustomers() {
   const canvasWidth = window.CanvasRenderer?.CONFIG?.width || 375;
   const canvasHeight = 340;  // 预览区域高度
   
+  // 检查是否有服务员
+  const hasWaiter = GameGlobal.employees && GameGlobal.employees.waiters && GameGlobal.employees.waiters.length > 0;
+  
   GameGlobal.customers.forEach(customer => {
     switch (customer.state) {
       case 'entering':
-        // 从门口走进来
+        // 从门口走进来（带避障）
         const dxEnter = customer.targetX - customer.x;
         const dyEnter = customer.targetY - customer.y;
         const distEnter = Math.sqrt(dxEnter * dxEnter + dyEnter * dyEnter);
         
         if (distEnter > 5) {
-          customer.x += (dxEnter / distEnter) * 1.5;
-          customer.y += (dyEnter / distEnter) * 1.5;
+          moveWithAvoidance(customer, customer.targetX, customer.targetY, 1.5);
           customer.walkFrame += 0.3;  // 走路动画
         } else {
-          customer.state = 'ordering';
-          customer.orderTime = Date.now();
+          customer.state = 'waiting_food';  // 改为 waiting_food
+          customer.waitFoodTime = Date.now();
         }
         break;
         
-      case 'ordering':
-        if (Date.now() - customer.orderTime > 2000) {
+      case 'waiting_food':
+        // 等待上菜
+        if (hasWaiter) {
+          // 检查是否有服务员正在为此顾客服务
+          const beingServed = GameGlobal.waiters && GameGlobal.waiters.some(w => w.servingCustomerId === customer.id);
+          
+          if (!beingServed) {
+            // 分配一个空闲服务员
+            const idleWaiter = GameGlobal.waiters.find(w => w.state === 'idle');
+            if (idleWaiter) {
+              idleWaiter.state = 'serving';
+              idleWaiter.servingCustomerId = customer.id;
+              idleWaiter.targetX = customer.x;
+              idleWaiter.targetY = customer.y;
+            }
+          }
+        }
+        
+        // 等待 5 秒后如果没有服务员，直接进入 eating 状态
+        if (Date.now() - customer.waitFoodTime > 5000) {
           customer.state = 'eating';
           customer.eatTime = Date.now();
         }
@@ -743,7 +833,7 @@ function updateCustomers() {
         break;
         
       case 'leaving':
-        // 走向门口（右下角）
+        // 走向门口（右下角）（带避障）
         const doorX = 320;
         const doorY = 280;
         const dxLeave = doorX - customer.x;
@@ -751,8 +841,7 @@ function updateCustomers() {
         const distLeave = Math.sqrt(dxLeave * dxLeave + dyLeave * dyLeave);
         
         if (distLeave > 5) {
-          customer.x += (dxLeave / distLeave) * 2;
-          customer.y += (dyLeave / distLeave) * 2;
+          moveWithAvoidance(customer, doorX, doorY, 2);
           customer.walkFrame += 0.3;  // 走路动画
         } else {
           customer.state = 'walking_out';
@@ -760,7 +849,7 @@ function updateCustomers() {
         break;
         
       case 'walking_out':
-        // 走向收银台付款
+        // 走向收银台付款（带避障）
         const cashierX = 300;
         const cashierY = 260;
         const dxCash = cashierX - customer.x;
@@ -768,8 +857,7 @@ function updateCustomers() {
         const distCash = Math.sqrt(dxCash * dxCash + dyCash * dyCash);
         
         if (distCash > 10) {
-          customer.x += (dxCash / distCash) * 1.5;
-          customer.y += (dyCash / distCash) * 1.5;
+          moveWithAvoidance(customer, cashierX, cashierY, 1.5);
           customer.walkFrame += 0.3;
         } else {
           // 到达收银台，付款
@@ -807,6 +895,46 @@ function updateCustomers() {
         break;
     }
   });
+  
+  // 更新服务员状态
+  if (GameGlobal.waiters) {
+    GameGlobal.waiters.forEach(waiter => {
+      if (waiter.state === 'serving' && waiter.servingCustomerId) {
+        // 找到对应的顾客
+        const customer = GameGlobal.customers.find(c => c.id === waiter.servingCustomerId);
+        
+        if (customer && customer.state === 'waiting_food') {
+          // 移动到顾客位置（带避障）
+          const arrived = moveWithAvoidance(waiter, waiter.targetX, waiter.targetY, 2);
+          
+          if (!arrived) {
+            // 到达顾客位置，上菜
+            customer.state = 'eating';
+            customer.eatTime = Date.now();
+            
+            // 服务员返回空闲
+            waiter.state = 'returning';
+            waiter.returnTargetX = 300;  // 返回厨房/服务区
+            waiter.returnTargetY = 50;
+          }
+        } else if (!customer) {
+          // 顾客已离开，返回空闲
+          waiter.state = 'returning';
+          waiter.returnTargetX = 300;
+          waiter.returnTargetY = 50;
+          waiter.servingCustomerId = null;
+        }
+      } else if (waiter.state === 'returning') {
+        // 返回服务区
+        const arrived = moveWithAvoidance(waiter, waiter.returnTargetX, waiter.returnTargetY, 2);
+        
+        if (!arrived) {
+          waiter.state = 'idle';
+          waiter.servingCustomerId = null;
+        }
+      }
+    });
+  }
 }
 
 // 启动游戏

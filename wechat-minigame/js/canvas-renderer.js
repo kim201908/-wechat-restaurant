@@ -300,6 +300,53 @@ function renderHome(y, height, gameData) {
     ctx.fillText('去商店购买家具装饰餐厅吧！', CONFIG.width / 2, y + 150);
   }
   
+  // 服务员动画系统（带端菜效果）
+  if (gameData.employees && gameData.employees.waiters && gameData.employees.waiters.length > 0) {
+    gameData.employees.waiters.forEach((waiter, index) => {
+      // 初始化服务员位置
+      if (!waiter.x) waiter.x = 300;
+      if (!waiter.y) waiter.y = 50;
+      if (!waiter.state) waiter.state = 'idle';
+      if (!waiter.walkFrame) waiter.walkFrame = 0;
+      
+      let emoji = '👩‍🍳';
+      let bounce = 0;
+      let hasFood = false;
+      
+      switch (waiter.state) {
+        case 'idle':
+          emoji = '👩‍🍳';
+          break;
+        case 'serving':
+          emoji = '👩‍🍳';
+          hasFood = true;
+          bounce = Math.sin(waiter.walkFrame) * 2;
+          break;
+        case 'returning':
+          emoji = '👩‍🍳';
+          bounce = Math.sin(waiter.walkFrame) * 2;
+          break;
+      }
+      
+      // 绘制服务员（带颠簸效果）
+      ctx.font = '32px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(emoji, waiter.x, y + waiter.y + bounce);
+      
+      // 如果端着菜，绘制菜品
+      if (hasFood) {
+        ctx.font = '20px sans-serif';
+        ctx.fillText('🍽️', waiter.x + 15, y + waiter.y - 10 + bounce);
+      }
+      
+      // 绘制状态标识
+      if (waiter.state === 'serving') {
+        ctx.font = '12px sans-serif';
+        ctx.fillText('🔄', waiter.x - 15, y + waiter.y - 15 + bounce);
+      }
+    });
+  }
+  
   // 顾客动画系统（带走路效果）
   if (gameData.customers && gameData.customers.length > 0) {
     gameData.customers.forEach(customer => {
@@ -314,7 +361,7 @@ function renderHome(y, height, gameData) {
           emoji = '🚶';
           bounce = Math.sin(customer.walkFrame) * 3;
           break;
-        case 'ordering':
+        case 'waiting_food':
           emoji = '👤';
           break;
         case 'eating':
@@ -332,7 +379,7 @@ function renderHome(y, height, gameData) {
       
       // 绘制状态气泡
       let status = '';
-      if (customer.state === 'ordering') status = '📝';
+      if (customer.state === 'waiting_food') status = '⏳';
       else if (customer.state === 'eating') status = '🍽️';
       else if (customer.state === 'paying') status = '💰';
       
