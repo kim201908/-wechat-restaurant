@@ -444,42 +444,11 @@ function renderBusinessRestaurant(y, height, gameData) {
     ctx.fillText('点击下方家具购买摆放', CONFIG.width / 2, y + 140);
   }
   
-  // 家具商店标题（下移，给预览区留空间）
-  ctx.fillStyle = CONFIG.colors.darkBrown;
-  ctx.font = 'bold 14px sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText('🛒 家具商店', 16, y + 360);
-  
-  // 家具网格
-  const furnitures = [
-    { icon: '🪑', name: '餐桌', price: 500, id: 'table' },
-    { icon: '🪑', name: '椅子', price: 200, id: 'chair' },
-    { icon: '🌿', name: '绿植', price: 100, id: 'plant' },
-    { icon: '🖼️', name: '装饰画', price: 300, id: 'painting' },
-    { icon: '💡', name: '吊灯', price: 800, id: 'lamp' },
-    { icon: '🪴', name: '盆栽', price: 150, id: 'pot' }
-  ];
-  
-  furnitures.forEach((f, index) => {
-    const x = 16 + (index % 3) * 110;
-    const fy = y + 390 + Math.floor(index / 3) * 75;
-    
-    ctx.fillStyle = '#FFFFFF';
-    drawRoundRect(x, fy, 100, 65, 8);
-    ctx.fill();
-    
-    ctx.font = '28px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(f.icon, x + 50, fy + 28);
-    
-    ctx.fillStyle = CONFIG.colors.darkBrown;
-    ctx.font = '12px sans-serif';
-    ctx.fillText(f.name, x + 50, fy + 48);
-    
-    ctx.fillStyle = CONFIG.colors.primaryRed;
-    ctx.font = 'bold 12px sans-serif';
-    ctx.fillText(`💰${f.price}`, x + 50, fy + 62);
-  });
+  // 提示文字
+  ctx.fillStyle = CONFIG.colors.gray;
+  ctx.font = '14px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('👉 去采购 Tab 购买更多家具', CONFIG.width / 2, y + 360);
 }
 
 // 渲染经营 - 厨房
@@ -713,28 +682,7 @@ function handleTouch(x, y, gameData, activeTab) {
       });
     }
     
-    // 经营 - 餐厅：购买家具（保留向后兼容）
-    if (gameData.businessSubTab === 'restaurant') {
-      const furnitures = [
-        { icon: '🪑', name: '餐桌', price: 500, id: 'table' },
-        { icon: '🪑', name: '椅子', price: 200, id: 'chair' },
-        { icon: '🌿', name: '绿植', price: 100, id: 'plant' },
-        { icon: '🖼️', name: '装饰画', price: 300, id: 'painting' },
-        { icon: '💡', name: '吊灯', price: 800, id: 'lamp' },
-        { icon: '🪴', name: '盆栽', price: 150, id: 'pot' }
-      ];
-      
-      // 根据新布局调整
-      for (let i = 0; i < furnitures.length; i++) {
-        const f = furnitures[i];
-        const fx = 16 + (i % 3) * 110;
-        const fy = 390 + Math.floor(i / 3) * 75;
-        
-        if (y >= fy && y <= fy + 75 && x >= fx && x <= fx + 100) {
-          return { type: 'action', action: 'buyFurniture', furniture: f };
-        }
-      }
-    }
+
   }
   
   // 社交 Tab 子导航检测
