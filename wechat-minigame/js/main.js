@@ -86,6 +86,16 @@ const GameGlobal = {
   // 顾客动画
   customerAnimationTimer: null,
   
+  // 收银系统
+  cashier: {
+    x: 300,
+    y: 260,
+    isWorking: true
+  },
+  
+  // 收入统计
+  todayEarnings: 0,
+  
   // 家具数据
   furnitures: [],
   
@@ -688,6 +698,35 @@ function updateCustomers() {
         break;
         
       case 'walking_out':
+        // 走向收银台付款
+        const cashierX = 300;
+        const cashierY = 260;
+        const dxCash = cashierX - customer.x;
+        const dyCash = cashierY - customer.y;
+        const distCash = Math.sqrt(dxCash * dxCash + dyCash * dyCash);
+        
+        if (distCash > 10) {
+          customer.x += (dxCash / distCash) * 1.5;
+          customer.y += (dyCash / distCash) * 1.5;
+          customer.walkFrame += 0.3;
+        } else {
+          // 到达收银台，付款
+          customer.state = 'paying';
+          customer.payTime = Date.now();
+        }
+        break;
+        
+      case 'paying':
+        if (Date.now() - customer.payTime > 1000) {
+          // 付款完成，增加收入
+          const bill = Math.floor(Math.random() * 30) + 20;  // 20-50 元
+          GameGlobal.todayEarnings += bill;
+          GameGlobal.player.gold += bill;
+          customer.state = 'walking_out_final';
+        }
+        break;
+        
+      case 'walking_out_final':
         customer.x += 2;  // 走出门口
         if (customer.x > canvasWidth + 30) {
           // 移除离开的顾客

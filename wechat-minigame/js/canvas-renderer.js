@@ -309,7 +309,7 @@ function renderHome(y, height, gameData) {
       switch (customer.state) {
         case 'entering':
         case 'walking_out':
-        case 'leaving':
+        case 'walking_out_final':
           // 走路动画 - 左右摇摆 + 上下颠簸
           emoji = '🚶';
           bounce = Math.sin(customer.walkFrame) * 3;
@@ -319,6 +319,9 @@ function renderHome(y, height, gameData) {
           break;
         case 'eating':
           emoji = '😋';
+          break;
+        case 'paying':
+          emoji = '👤';
           break;
       }
       
@@ -331,6 +334,7 @@ function renderHome(y, height, gameData) {
       let status = '';
       if (customer.state === 'ordering') status = '📝';
       else if (customer.state === 'eating') status = '🍽️';
+      else if (customer.state === 'paying') status = '💰';
       
       if (status) {
         ctx.font = '14px sans-serif';
@@ -415,11 +419,32 @@ function renderBusinessRestaurant(y, height, gameData) {
   drawRoundRect(26, y + 120, CONFIG.width - 52, 200, 8);
   ctx.fill();
   
+  // 收银台（右侧）
+  ctx.fillStyle = '#654321';
+  drawRoundRect(CONFIG.width - 70, y + 240, 60, 50, 8);
+  ctx.fill();
+  
+  // 收银台标识
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '20px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('💰', CONFIG.width - 40, y + 270);
+  
+  // 收银员
+  ctx.font = '28px sans-serif';
+  ctx.fillText('👨‍💼', CONFIG.width - 40, y + 250);
+  
+  // 今日收入显示
+  ctx.fillStyle = CONFIG.colors.primaryRed;
+  ctx.font = 'bold 12px sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText(`今日收入：💰${gameData.todayEarnings || 0}`, CONFIG.width - 20, y + 230);
+  
   // 门口标识（右下角）
   ctx.fillStyle = '#8B4513';
   ctx.font = '24px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('🚪', CONFIG.width - 40, y + 280);
+  ctx.fillText('🚪', CONFIG.width - 40, y + 300);
   
   // 显示已购买的家具（可拖拽）- 在预览区域内
   if (gameData.furnitures && gameData.furnitures.length > 0) {
