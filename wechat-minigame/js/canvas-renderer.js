@@ -630,7 +630,6 @@ function handleTouch(x, y, gameData, activeTab) {
         return { type: 'subtab', subtab: subTabs[subTabIndex], tabGroup: 'mall' };
       }
     }
-  }
     
     // 推荐页：首充礼包购买
     if (gameData.mallSubTab === 'recommend' && !gameData.hasFirstCharge) {
