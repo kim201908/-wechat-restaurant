@@ -564,24 +564,16 @@ function handleTouch(x, y, gameData, activeTab) {
     return null;
   }
   
-  // 经营 Tab 子导航检测
+  // 经营 Tab 子导航检测（严格边界）
   if (activeTab === 'business') {
     const subNavY = CONFIG.statusBarHeight + 40;
     const subNavHeight = 36;
     
-    console.log(`[经营子导航] Y 范围:${subNavY}-${subNavY + subNavHeight}, 点击 Y:${y}, 在范围内:${y >= subNavY && y <= subNavY + subNavHeight}`);
-    
-    if (y >= subNavY && y <= subNavY + subNavHeight) {
-      if (x < 16 || x > CONFIG.width - 16) {
-        console.log('[经营子导航] X 超出边界');
-        return null;
-      }
-      
+    // 只在子导航区域内才触发
+    if (y >= subNavY && y <= subNavY + subNavHeight && x >= 16 && x <= CONFIG.width - 16) {
       const subTabWidth = (CONFIG.width - 32) / 3;
       const subTabIndex = Math.floor((x - 16) / subTabWidth);
       const subTabs = ['restaurant', 'kitchen', 'delivery'];
-      
-      console.log(`[经营子导航] X:${x}, 索引:${subTabIndex}, 宽度:${subTabWidth.toFixed(1)}, 结果:${subTabs[subTabIndex]}`);
       
       if (subTabIndex >= 0 && subTabIndex < 3) {
         return { type: 'subtab', subtab: subTabs[subTabIndex], tabGroup: 'business' };
@@ -634,16 +626,13 @@ function handleTouch(x, y, gameData, activeTab) {
     }
   }
   
-  // 社交 Tab 子导航检测
+  // 社交 Tab 子导航检测（严格边界）
   if (activeTab === 'social') {
     const subNavY = CONFIG.statusBarHeight + 40;
     const subNavHeight = 36;
     
-    if (y >= subNavY && y <= subNavY + subNavHeight) {
-      if (x < 16 || x > CONFIG.width - 16) {
-        return null;
-      }
-      
+    // 只在子导航区域内才触发
+    if (y >= subNavY && y <= subNavY + subNavHeight && x >= 16 && x <= CONFIG.width - 16) {
       const subTabWidth = (CONFIG.width - 32) / 3;
       const subTabIndex = Math.floor((x - 16) / subTabWidth);
       const subTabs = ['friends', 'rankings', 'events'];
@@ -653,25 +642,23 @@ function handleTouch(x, y, gameData, activeTab) {
       }
     }
     
-    // 好友页：复制好友码按钮
+    // 好友页：复制好友码按钮（严格边界）
     if (gameData.socialSubTab === 'friends') {
       const btnY = CONFIG.statusBarHeight + 75;
-      if (y >= btnY && y <= btnY + 36 && x >= 16 && x <= CONFIG.width - 16) {
+      const btnHeight = 36;
+      if (y >= btnY && y <= btnY + btnHeight && x >= 16 && x <= CONFIG.width - 16) {
         return { type: 'action', action: 'copyFriendCode' };
       }
     }
   }
   
-  // 商城 Tab 子导航检测
+  // 商城 Tab 子导航检测（严格边界）
   if (activeTab === 'mall') {
     const subNavY = CONFIG.statusBarHeight + 40;
     const subNavHeight = 36;
     
-    if (y >= subNavY && y <= subNavY + subNavHeight) {
-      if (x < 16 || x > CONFIG.width - 16) {
-        return null;
-      }
-      
+    // 只在子导航区域内才触发
+    if (y >= subNavY && y <= subNavY + subNavHeight && x >= 16 && x <= CONFIG.width - 16) {
       const subTabWidth = (CONFIG.width - 32) / 3;
       const subTabIndex = Math.floor((x - 16) / subTabWidth);
       const subTabs = ['recommend', 'items', 'decorations'];
