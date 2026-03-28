@@ -598,6 +598,10 @@ function renderBusinessKitchen(y, height, gameData) {
   ctx.textAlign = 'left';
   ctx.fillText('📊 今日成本', 16, statsY);
   
+  drawStatCard(16, statsY + 8, 100, 45, `${gameData.costs?.todayIngredientCost || 0}`, '食材');
+  drawStatCard(126, statsY + 8, 100, 45, `${gameData.costs?.todayWages || 0}`, '工资');
+  drawStatCard(236, statsY + 8, 100, 45, `${gameData.profit?.todayProfit || 0}`, '利润');
+}
 
 // 渲染经营 - 外卖
 function renderBusinessDelivery(y, height, gameData) {
