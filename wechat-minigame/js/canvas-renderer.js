@@ -553,7 +553,6 @@ function handleTouch(x, y, gameData, activeTab) {
     const itemWidth = CONFIG.width / 4;
     const tabIndex = Math.floor(x / itemWidth);
     const tabs = ['home', 'business', 'social', 'mall'];
-    console.log(`[底部导航] Y:${navY}, 点击 Y:${y}, Tab 索引:${tabIndex}, 结果:${tabs[tabIndex]}`);
     return { type: 'tab', tab: tabs[tabIndex] };
   }
   
