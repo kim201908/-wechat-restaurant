@@ -107,6 +107,10 @@ const GameGlobal = {
   // 顾客动画
   customerAnimationTimer: null,
   
+  // 服务员系统
+  waiters: [],
+  waiterAnimationTimer: null,
+  
   // 收银系统
   cashier: {
     x: 300,
