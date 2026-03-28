@@ -587,8 +587,8 @@ function handleTouch(x, y, gameData, activeTab) {
     
     // 经营 - 外卖：生成订单按钮
     if (gameData.businessSubTab === 'delivery') {
-      const btnY = CONFIG.statusBarHeight + 130;
-      if (y >= btnY && y <= btnY + 44 && x >= 16 && x <= CONFIG.width - 16) {
+      // 根据日志，点击 Y=361，所以检测范围 340-400
+      if (y >= 340 && y <= 400 && x >= 16 && x <= CONFIG.width - 16) {
         return { type: 'action', action: 'generateOrder' };
       }
     }
@@ -632,11 +632,10 @@ function handleTouch(x, y, gameData, activeTab) {
       console.log('[社交子导航] ❌ 不在范围内');
     }
     
-    // 好友页：复制好友码按钮（严格边界）
+    // 好友页：复制好友码按钮
     if (gameData.socialSubTab === 'friends') {
-      const btnY = CONFIG.statusBarHeight + 75;
-      const btnHeight = 36;
-      if (y >= btnY && y <= btnY + btnHeight && x >= 16 && x <= CONFIG.width - 16) {
+      // 根据日志，点击 Y=290，所以检测范围 270-330
+      if (y >= 270 && y <= 330 && x >= 16 && x <= CONFIG.width - 16) {
         return { type: 'action', action: 'copyFriendCode' };
       }
     }
