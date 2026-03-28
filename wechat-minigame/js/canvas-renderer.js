@@ -287,15 +287,180 @@ function renderHome(y, height, gameData) {
 
 // 渲染经营页
 function renderBusiness(y, height, gameData) {
-  ctx.fillStyle = CONFIG.colors.darkBrown;
-  ctx.font = 'bold 18px sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText('📈 经营', 16, y + 16);
+  // 子导航（餐厅/厨房/外卖）
+  const subNavY = y + 40;
+  const subTabs = [
+    { key: 'restaurant', label: '🏪 餐厅' },
+    { key: 'kitchen', label: '🍳 厨房' },
+    { key: 'delivery', label: '🛵 外卖' }
+  ];
+  const subTabWidth = (CONFIG.width - 32) / 3;
   
+  subTabs.forEach((tab, index) => {
+    const x = 16 + index * subTabWidth;
+    const isActive = gameData.businessSubTab === tab.key;
+    
+    ctx.fillStyle = isActive ? CONFIG.colors.primaryRed : '#E0E0E0';
+    drawRoundRect(x, subNavY, subTabWidth - 4, 36, 8);
+    ctx.fill();
+    
+    ctx.fillStyle = isActive ? '#FFFFFF' : CONFIG.colors.gray;
+    ctx.font = 'bold 13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(tab.label, x + subTabWidth / 2, subNavY + 18);
+  });
+  
+  // 根据子 Tab 渲染内容
+  const contentY = subNavY + 50;
+  
+  switch (gameData.businessSubTab || 'restaurant') {
+    case 'restaurant':
+      renderBusinessRestaurant(contentY, height, gameData);
+      break;
+    case 'kitchen':
+      renderBusinessKitchen(contentY, height, gameData);
+      break;
+    case 'delivery':
+      renderBusinessDelivery(contentY, height, gameData);
+      break;
+  }
+}
+
+// 渲染经营 - 餐厅
+function renderBusinessRestaurant(y, height, gameData) {
+  ctx.fillStyle = CONFIG.colors.darkBrown;
+  ctx.font = 'bold 16px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('🏪 餐厅装修', 16, y + 20);
+  
+  // 预览区域
+  ctx.fillStyle = '#DEB887';
+  drawRoundRect(16, y + 40, CONFIG.width - 32, 200, 8);
+  ctx.fill();
   ctx.fillStyle = CONFIG.colors.gray;
   ctx.font = '14px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('厨师管理、菜品升级', CONFIG.width / 2, y + 100);
+  ctx.fillText('装修预览（开发中）', CONFIG.width / 2, y + 140);
+  
+  // 家具列表标题
+  ctx.fillStyle = CONFIG.colors.darkBrown;
+  ctx.font = 'bold 14px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('可用家具', 16, y + 260);
+  
+  // 家具网格
+  const furnitures = [
+    { icon: '🪑', name: '餐桌', price: 500 },
+    { icon: '🪑', name: '椅子', price: 200 },
+    { icon: '🌿', name: '绿植', price: 100 },
+    { icon: '🖼️', name: '装饰画', price: 300 }
+  ];
+  
+  furnitures.forEach((f, index) => {
+    const x = 16 + (index % 3) * 110;
+    const fy = y + 290 + Math.floor(index / 3) * 90;
+    
+    ctx.fillStyle = '#FFFFFF';
+    drawRoundRect(x, fy, 100, 80, 8);
+    ctx.fill();
+    
+    ctx.font = '32px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(f.icon, x + 50, fy + 35);
+    
+    ctx.fillStyle = CONFIG.colors.darkBrown;
+    ctx.font = '12px sans-serif';
+    ctx.fillText(f.name, x + 50, fy + 55);
+    
+    ctx.fillStyle = CONFIG.colors.primaryRed;
+    ctx.font = 'bold 12px sans-serif';
+    ctx.fillText(`💰${f.price}`, x + 50, fy + 72);
+  });
+}
+
+// 渲染经营 - 厨房
+function renderBusinessKitchen(y, height, gameData) {
+  // 厨师列表
+  ctx.fillStyle = CONFIG.colors.darkBrown;
+  ctx.font = 'bold 16px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('👨‍🍳 厨师管理', 16, y + 20);
+  
+  gameData.chefs.forEach((chef, index) => {
+    const fy = y + 50 + index * 70;
+    
+    ctx.fillStyle = '#FFFFFF';
+    drawRoundRect(16, fy, CONFIG.width - 32, 60, 8);
+    ctx.fill();
+    
+    ctx.font = '32px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('👨‍🍳', 26, fy + 38);
+    
+    ctx.fillStyle = CONFIG.colors.darkBrown;
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText(`${chef.name} Lv.${chef.level}`, 70, fy + 28);
+    
+    ctx.fillStyle = CONFIG.colors.gray;
+    ctx.font = '12px sans-serif';
+    ctx.fillText(`速度：${chef.speed}`, 70, fy + 48);
+  });
+  
+  // 雇佣按钮
+  const btnY = y + 50 + gameData.chefs.length * 70 + 20;
+  drawButton('📢 雇佣新厨师 (💰500)', 16, btnY, CONFIG.width - 32, 44, 'primary');
+  
+  // 菜品管理
+  const dishesY = btnY + 60;
+  ctx.fillStyle = CONFIG.colors.darkBrown;
+  ctx.font = 'bold 16px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('🍜 菜品管理', 16, dishesY);
+  
+  gameData.dishes.forEach((dish, index) => {
+    const fy = dishesY + 30 + index * 70;
+    
+    ctx.fillStyle = dish.unlocked ? '#FFFFFF' : '#E0E0E0';
+    drawRoundRect(16, fy, CONFIG.width - 32, 60, 8);
+    ctx.fill();
+    
+    const icon = dish.unlocked ? '🍜' : '🔒';
+    ctx.font = '28px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(icon, 26, fy + 38);
+    
+    ctx.fillStyle = dish.unlocked ? CONFIG.colors.darkBrown : CONFIG.colors.gray;
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText(`${dish.name} Lv.${dish.level}`, 70, fy + 28);
+    
+    ctx.fillStyle = CONFIG.colors.gray;
+    ctx.font = '12px sans-serif';
+    ctx.fillText(`价格：💰${dish.price}`, 70, fy + 48);
+  });
+}
+
+// 渲染经营 - 外卖
+function renderBusinessDelivery(y, height, gameData) {
+  ctx.fillStyle = CONFIG.colors.darkBrown;
+  ctx.font = 'bold 16px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('🛵 外卖订单', 16, y + 20);
+  
+  // 统计
+  drawStatCard(16, y + 50, 100, 60, '0', '今日单数');
+  drawStatCard(126, y + 50, 100, 60, '¥0', '今日收入');
+  drawStatCard(236, y + 50, 100, 60, '¥0', '历史收入');
+  
+  // 生成订单按钮
+  const btnY = y + 130;
+  drawButton('➕ 生成订单', 16, btnY, CONFIG.width - 32, 44, 'primary');
+  
+  // 订单列表
+  ctx.fillStyle = CONFIG.colors.gray;
+  ctx.font = '14px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('暂无订单', CONFIG.width / 2, btnY + 70);
 }
 
 // 渲染社交页
@@ -333,6 +498,43 @@ function handleTouch(x, y, gameData, activeTab) {
     const tabIndex = Math.floor(x / itemWidth);
     const tabs = ['home', 'business', 'social', 'mall'];
     return { type: 'tab', tab: tabs[tabIndex] };
+  }
+  
+  // 经营 Tab 子导航检测
+  if (activeTab === 'business') {
+    const subNavY = CONFIG.statusBarHeight + 40;
+    if (y >= subNavY && y <= subNavY + 36) {
+      const subTabWidth = (CONFIG.width - 32) / 3;
+      const subTabIndex = Math.floor((x - 16) / subTabWidth);
+      const subTabs = ['restaurant', 'kitchen', 'delivery'];
+      if (subTabIndex >= 0 && subTabIndex < 3) {
+        return { type: 'subtab', subtab: subTabs[subTabIndex] };
+      }
+    }
+    
+    // 经营 - 厨房：雇佣厨师按钮
+    if (gameData.businessSubTab === 'kitchen') {
+      const btnY = CONFIG.statusBarHeight + 50 + gameData.chefs.length * 70 + 20;
+      if (y >= btnY && y <= btnY + 44 && x >= 16 && x <= CONFIG.width - 16) {
+        return { type: 'action', action: 'recruitChef' };
+      }
+      
+      // 菜品点击（升级）
+      gameData.dishes.forEach((dish, index) => {
+        const dishY = CONFIG.statusBarHeight + 50 + 60 + 30 + index * 70;
+        if (y >= dishY && y <= dishY + 60 && x >= 16 && x <= CONFIG.width - 16 && dish.unlocked) {
+          return { type: 'action', action: 'upgradeDish', dishId: dish.id };
+        }
+      });
+    }
+    
+    // 经营 - 外卖：生成订单按钮
+    if (gameData.businessSubTab === 'delivery') {
+      const btnY = CONFIG.statusBarHeight + 130;
+      if (y >= btnY && y <= btnY + 44 && x >= 16 && x <= CONFIG.width - 16) {
+        return { type: 'action', action: 'generateOrder' };
+      }
+    }
   }
   
   // 检测首页按钮点击

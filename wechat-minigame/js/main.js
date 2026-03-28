@@ -40,6 +40,9 @@ const GameGlobal = {
   // 当前 Tab
   activeTab: 'home',
   
+  // 经营子 Tab
+  businessSubTab: 'restaurant',
+  
   // Canvas
   canvas: null
 };
@@ -174,16 +177,19 @@ function bindTouchEvents() {
       if (action.type === 'tab') {
         GameGlobal.activeTab = action.tab;
         render();
+      } else if (action.type === 'subtab') {
+        GameGlobal.businessSubTab = action.subtab;
+        render();
       } else if (action.type === 'action') {
-        handleAction(action.action);
+        handleAction(action);
       }
     }
   });
 }
 
 // 处理动作
-function handleAction(actionName) {
-  switch (actionName) {
+function handleAction(action) {
+  switch (action.action) {
     case 'collectEarnings':
       const earnings = GameGlobal.chefs.length * 50;
       GameGlobal.player.gold += earnings;
@@ -193,6 +199,67 @@ function handleAction(actionName) {
       });
       saveGame();
       render();
+      break;
+      
+    case 'recruitChef':
+      if (GameGlobal.player.gold >= 500) {
+        GameGlobal.player.gold -= 500;
+        const newChef = {
+          id: GameGlobal.chefs.length + 1,
+          name: `厨师${GameGlobal.chefs.length + 1}`,
+          level: 1,
+          speed: 10,
+          cuisine: '川菜'
+        };
+        GameGlobal.chefs.push(newChef);
+        wx.showToast({
+          title: '雇佣成功！',
+          icon: 'success'
+        });
+        saveGame();
+        render();
+      } else {
+        wx.showToast({
+          title: '金币不足',
+          icon: 'none'
+        });
+      }
+      break;
+      
+    case 'upgradeDish':
+      const dish = GameGlobal.dishes.find(d => d.id === action.dishId);
+      if (dish && dish.unlocked) {
+        const upgradeCost = dish.level * 100;
+        if (GameGlobal.player.gold >= upgradeCost) {
+          GameGlobal.player.gold -= upgradeCost;
+          dish.level += 1;
+          dish.price += 5;
+          wx.showToast({
+            title: `升级到 Lv.${dish.level}`,
+            icon: 'success'
+          });
+          saveGame();
+          render();
+        } else {
+          wx.showToast({
+            title: '金币不足',
+            icon: 'none'
+          });
+        }
+      }
+      break;
+      
+    case 'generateOrder':
+      wx.showToast({
+        title: '订单生成中...',
+        icon: 'loading'
+      });
+      setTimeout(() => {
+        wx.showToast({
+          title: '订单已生成',
+          icon: 'success'
+        });
+      }, 1000);
       break;
   }
 }
