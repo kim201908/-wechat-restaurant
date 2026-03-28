@@ -44,6 +44,27 @@ const GameGlobal = {
   // 经营子 Tab
   businessSubTab: 'restaurant',
   
+  // 采购商品分类
+  shoppingCategories: [
+    { id: 'tables', name: '🪑 桌椅类', icon: '🪑' },
+    { id: 'decorations', name: '🖼️ 装饰类', icon: '🖼️' },
+    { id: 'lights', name: '💡 灯具类', icon: '💡' },
+    { id: 'plants', name: '🌿 植物类', icon: '🌿' }
+  ],
+  
+  // 商品列表
+  shoppingItems: [
+    { id: 'table1', category: 'tables', name: '餐桌', icon: '🪑', price: 500 },
+    { id: 'chair1', category: 'tables', name: '椅子', icon: '🪑', price: 200 },
+    { id: 'painting1', category: 'decorations', name: '装饰画', icon: '🖼️', price: 300 },
+    { id: 'lamp1', category: 'lights', name: '吊灯', icon: '💡', price: 800 },
+    { id: 'plant1', category: 'plants', name: '绿植', icon: '🌿', price: 100 },
+    { id: 'pot1', category: 'plants', name: '盆栽', icon: '🪴', price: 150 }
+  ],
+  
+  // 当前选中的采购分类
+  selectedCategory: 'tables',
+  
   // 家具数据
   furnitures: [],
   
@@ -501,21 +522,22 @@ function handleAction(action) {
       break;
       
     case 'buyFurniture':
-      const furniture = action.furniture;
-      if (GameGlobal.player.gold >= furniture.price) {
+    case 'buyItem':
+      const item = action.furniture || action.item;
+      if (GameGlobal.player.gold >= item.price) {
         wx.showModal({
-          title: '购买家具',
-          content: `确认购买 ${furniture.name}（💰${furniture.price}）？`,
+          title: '购买商品',
+          content: `确认购买 ${item.name}（💰${item.price}）？`,
           success(res) {
             if (res.confirm) {
-              GameGlobal.player.gold -= furniture.price;
+              GameGlobal.player.gold -= item.price;
               if (!GameGlobal.furnitures) GameGlobal.furnitures = [];
-              // 新购买的家具放在预览区域（随机位置，避免重叠）
+              // 新购买的家具放在预览区域
               const index = GameGlobal.furnitures.length;
               GameGlobal.furnitures.push({
-                id: furniture.id,
-                icon: furniture.icon,
-                name: furniture.name,
+                id: item.id,
+                icon: item.icon,
+                name: item.name,
                 x: 50 + (index % 5) * 60,
                 y: (index < 5 ? 20 : 70)
               });
@@ -534,6 +556,11 @@ function handleAction(action) {
           icon: 'none'
         });
       }
+      break;
+      
+    case 'selectCategory':
+      GameGlobal.selectedCategory = action.categoryId;
+      render();
       break;
     }
   } catch (e) {

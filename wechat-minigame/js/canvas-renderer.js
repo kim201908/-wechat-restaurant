@@ -321,14 +321,15 @@ function renderHome(y, height, gameData) {
 
 // 渲染经营页
 function renderBusiness(y, height, gameData) {
-  // 子导航（餐厅/厨房/外卖）
+  // 子导航（餐厅/厨房/采购/外卖）- 4 个
   const subNavY = y + 40;
   const subTabs = [
     { key: 'restaurant', label: '🏪 餐厅' },
     { key: 'kitchen', label: '🍳 厨房' },
+    { key: 'shopping', label: '🛒 采购' },
     { key: 'delivery', label: '🛵 外卖' }
   ];
-  const subTabWidth = (CONFIG.width - 32) / 3;
+  const subTabWidth = (CONFIG.width - 32) / 4;  // 4 个 Tab
   
   subTabs.forEach((tab, index) => {
     const x = 16 + index * subTabWidth;
@@ -354,6 +355,9 @@ function renderBusiness(y, height, gameData) {
       break;
     case 'kitchen':
       renderBusinessKitchen(contentY, height, gameData);
+      break;
+    case 'shopping':
+      renderBusinessShopping(contentY, height, gameData);
       break;
     case 'delivery':
       renderBusinessDelivery(contentY, height, gameData);
@@ -530,6 +534,65 @@ function renderBusinessDelivery(y, height, gameData) {
   ctx.fillText('暂无订单', CONFIG.width / 2, btnY + 70);
 }
 
+// 渲染经营 - 采购
+function renderBusinessShopping(y, height, gameData) {
+  ctx.fillStyle = CONFIG.colors.darkBrown;
+  ctx.font = 'bold 16px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('🛒 采购中心', 16, y + 20);
+  
+  // 分类选择
+  const categories = gameData.shoppingCategories || [];
+  const catWidth = (CONFIG.width - 48) / categories.length;
+  
+  categories.forEach((cat, index) => {
+    const cx = 16 + index * catWidth;
+    const isActive = gameData.selectedCategory === cat.id;
+    
+    ctx.fillStyle = isActive ? CONFIG.colors.primaryRed : '#E0E0E0';
+    drawRoundRect(cx, y + 50, catWidth - 4, 40, 8);
+    ctx.fill();
+    
+    ctx.fillStyle = isActive ? '#FFFFFF' : CONFIG.colors.gray;
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(cat.name, cx + catWidth / 2, y + 70);
+  });
+  
+  // 商品列表
+  ctx.fillStyle = CONFIG.colors.darkBrown;
+  ctx.font = 'bold 14px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('商品列表', 16, y + 110);
+  
+  const items = (gameData.shoppingItems || []).filter(item => item.category === gameData.selectedCategory);
+  
+  items.forEach((item, index) => {
+    const ix = 16 + (index % 2) * 170;
+    const iy = y + 140 + Math.floor(index / 2) * 100;
+    
+    ctx.fillStyle = '#FFFFFF';
+    drawRoundRect(ix, iy, 160, 90, 8);
+    ctx.fill();
+    
+    // 商品图标
+    ctx.font = '40px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(item.icon, ix + 80, iy + 45);
+    
+    // 商品名称
+    ctx.fillStyle = CONFIG.colors.darkBrown;
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText(item.name, ix + 80, iy + 70);
+    
+    // 价格
+    ctx.fillStyle = CONFIG.colors.primaryRed;
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillText(`💰${item.price}`, ix + 80, iy + 90);
+  });
+}
+
 // 渲染社交页 - 转发到 social-mall.js
 function renderSocial(y, height, gameData) {
   if (window.SocialMallRenderer) {
@@ -557,15 +620,14 @@ function handleTouch(x, y, gameData, activeTab) {
     return { type: 'tab', tab: tabs[tabIndex] };
   }
   
-  // 经营 Tab 子导航检测（根据实际点击调整）
+  // 经营 Tab 子导航检测（4 个 Tab：餐厅/厨房/采购/外卖）
   if (activeTab === 'business') {
-    // 根据日志 Y=90-97 能点中，Y=127+ 点不中，说明按钮在 95-130 左右
     if (y >= 90 && y <= 140 && x >= 16 && x <= CONFIG.width - 16) {
-      const subTabWidth = (CONFIG.width - 32) / 3;
+      const subTabWidth = (CONFIG.width - 32) / 4;  // 4 个 Tab
       const subTabIndex = Math.floor((x - 16) / subTabWidth);
-      const subTabs = ['restaurant', 'kitchen', 'delivery'];
+      const subTabs = ['restaurant', 'kitchen', 'shopping', 'delivery'];
       
-      if (subTabIndex >= 0 && subTabIndex < 3) {
+      if (subTabIndex >= 0 && subTabIndex < 4) {
         return { type: 'subtab', subtab: subTabs[subTabIndex], tabGroup: 'business' };
       }
     }
@@ -594,7 +656,32 @@ function handleTouch(x, y, gameData, activeTab) {
       }
     }
     
-    // 经营 - 餐厅：购买家具
+    // 经营 - 采购：点击商品
+    if (gameData.businessSubTab === 'shopping') {
+      // 分类点击检测
+      const categories = gameData.shoppingCategories || [];
+      const catWidth = (CONFIG.width - 48) / categories.length;
+      
+      categories.forEach((cat, index) => {
+        const cx = 16 + index * catWidth;
+        if (y >= 50 && y <= 90 && x >= cx && x <= cx + catWidth - 4) {
+          return { type: 'action', action: 'selectCategory', categoryId: cat.id };
+        }
+      });
+      
+      // 商品点击检测
+      const items = (gameData.shoppingItems || []).filter(item => item.category === gameData.selectedCategory);
+      items.forEach((item, index) => {
+        const ix = 16 + (index % 2) * 170;
+        const iy = 140 + Math.floor(index / 2) * 100;
+        
+        if (y >= iy && y <= iy + 90 && x >= ix && x <= ix + 160) {
+          return { type: 'action', action: 'buyItem', item: item };
+        }
+      });
+    }
+    
+    // 经营 - 餐厅：购买家具（保留向后兼容）
     if (gameData.businessSubTab === 'restaurant') {
       const furnitures = [
         { icon: '🪑', name: '餐桌', price: 500, id: 'table' },
@@ -605,7 +692,7 @@ function handleTouch(x, y, gameData, activeTab) {
         { icon: '🪴', name: '盆栽', price: 150, id: 'pot' }
       ];
       
-      // 根据新布局调整：第一排 Y=390-465，第二排 Y=465-540
+      // 根据新布局调整
       for (let i = 0; i < furnitures.length; i++) {
         const f = furnitures[i];
         const fx = 16 + (i % 3) * 110;
