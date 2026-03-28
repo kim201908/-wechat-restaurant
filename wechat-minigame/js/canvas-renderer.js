@@ -516,6 +516,7 @@ function handleTouch(x, y, gameData, activeTab) {
     const itemWidth = CONFIG.width / 4;
     const tabIndex = Math.floor(x / itemWidth);
     const tabs = ['home', 'business', 'social', 'mall'];
+    console.log(`[底部导航] Y:${navY}, 点击 Y:${y}, Tab 索引:${tabIndex}, 结果:${tabs[tabIndex]}`);
     return { type: 'tab', tab: tabs[tabIndex] };
   }
   
@@ -524,14 +525,19 @@ function handleTouch(x, y, gameData, activeTab) {
     const subNavY = CONFIG.statusBarHeight + 40;
     const subNavHeight = 36;
     
+    console.log(`[经营子导航] Y 范围:${subNavY}-${subNavY + subNavHeight}, 点击 Y:${y}, 在范围内:${y >= subNavY && y <= subNavY + subNavHeight}`);
+    
     if (y >= subNavY && y <= subNavY + subNavHeight) {
       if (x < 16 || x > CONFIG.width - 16) {
+        console.log('[经营子导航] X 超出边界');
         return null;
       }
       
       const subTabWidth = (CONFIG.width - 32) / 3;
       const subTabIndex = Math.floor((x - 16) / subTabWidth);
       const subTabs = ['restaurant', 'kitchen', 'delivery'];
+      
+      console.log(`[经营子导航] X:${x}, 索引:${subTabIndex}, 宽度:${subTabWidth.toFixed(1)}, 结果:${subTabs[subTabIndex]}`);
       
       if (subTabIndex >= 0 && subTabIndex < 3) {
         return { type: 'subtab', subtab: subTabs[subTabIndex], tabGroup: 'business' };
