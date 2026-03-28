@@ -598,39 +598,6 @@ function renderBusinessKitchen(y, height, gameData) {
   ctx.textAlign = 'left';
   ctx.fillText('📊 今日成本', 16, statsY);
   
-  drawStatCard(16, statsY + 8, 100, 45, `💰${gameData.costs?.todayIngredientCost || 0}`, '食材');
-  drawStatCard(126, statsY + 8, 100, 45, `💰${gameData.costs?.todayWages || 0}`, '工资');
-  drawStatCard(236, statsY + 8, 100, 45, `💰${gameData.profit?.todayProfit || 0}`, '利润');
-}
-  
-  // 菜品管理
-  const dishesY = btnY + 60;
-  ctx.fillStyle = CONFIG.colors.darkBrown;
-  ctx.font = 'bold 16px sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText('🍜 菜品管理', 16, dishesY);
-  
-  gameData.dishes.forEach((dish, index) => {
-    const fy = dishesY + 30 + index * 70;
-    
-    ctx.fillStyle = dish.unlocked ? '#FFFFFF' : '#E0E0E0';
-    drawRoundRect(16, fy, CONFIG.width - 32, 60, 8);
-    ctx.fill();
-    
-    const icon = dish.unlocked ? '🍜' : '🔒';
-    ctx.font = '28px sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText(icon, 26, fy + 38);
-    
-    ctx.fillStyle = dish.unlocked ? CONFIG.colors.darkBrown : CONFIG.colors.gray;
-    ctx.font = 'bold 14px sans-serif';
-    ctx.fillText(`${dish.name} Lv.${dish.level}`, 70, fy + 28);
-    
-    ctx.fillStyle = CONFIG.colors.gray;
-    ctx.font = '12px sans-serif';
-    ctx.fillText(`价格：💰${dish.price}`, 70, fy + 48);
-  });
-}
 
 // 渲染经营 - 外卖
 function renderBusinessDelivery(y, height, gameData) {
