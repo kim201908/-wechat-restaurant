@@ -330,11 +330,12 @@ function bindTouchEvents() {
       const x = touch.pageX || touch.clientX;
       const y = touch.pageY || touch.clientY;
       
-      // 更新家具位置
+      // 更新家具位置（使用绝对坐标）
       const furniture = GameGlobal.furnitures[GameGlobal.dragState.dragIndex];
       if (furniture) {
-        furniture.x = x - GameGlobal.dragState.offsetX;
-        furniture.y = y - GameGlobal.dragState.offsetY - CanvasRenderer.CONFIG.statusBarHeight;
+        // 限制在预览区域内（X: 16-359, Y: 40-240）
+        furniture.x = Math.max(16, Math.min(359, x - GameGlobal.dragState.offsetX));
+        furniture.y = Math.max(0, Math.min(160, y - GameGlobal.dragState.offsetY));
         render();
       }
     } catch (e) {
