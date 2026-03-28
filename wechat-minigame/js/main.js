@@ -633,6 +633,8 @@ function startCustomerAnimation() {
 
 // 更新顾客状态
 function updateCustomers() {
+  const canvasWidth = window.CanvasRenderer?.CONFIG?.width || 375;
+  
   GameGlobal.customers.forEach(customer => {
     switch (customer.state) {
       case 'entering':
@@ -655,7 +657,7 @@ function updateCustomers() {
         break;
       case 'leaving':
         customer.x += 3;
-        if (customer.x > CONFIG.width + 30) {
+        if (customer.x > canvasWidth + 30) {
           // 移除离开的顾客
           GameGlobal.customers = GameGlobal.customers.filter(c => c.id !== customer.id);
         }
