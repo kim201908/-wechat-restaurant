@@ -509,12 +509,14 @@ function handleAction(action) {
             if (res.confirm) {
               GameGlobal.player.gold -= furniture.price;
               if (!GameGlobal.furnitures) GameGlobal.furnitures = [];
+              // 新购买的家具放在预览区域（随机位置，避免重叠）
+              const index = GameGlobal.furnitures.length;
               GameGlobal.furnitures.push({
                 id: furniture.id,
                 icon: furniture.icon,
                 name: furniture.name,
-                x: 36 + GameGlobal.furnitures.length * 70,
-                y: 130
+                x: 50 + (index % 5) * 60,
+                y: (index < 5 ? 20 : 70)
               });
               wx.showToast({
                 title: '购买成功！',

@@ -378,27 +378,28 @@ function renderBusinessRestaurant(y, height, gameData) {
   drawRoundRect(26, y + 120, CONFIG.width - 52, 110, 8);
   ctx.fill();
   
-  // 显示已购买的家具（可拖拽）
+  // 显示已购买的家具（可拖拽）- 在预览区域内
   if (gameData.furnitures && gameData.furnitures.length > 0) {
     gameData.furnitures.forEach((f, index) => {
-      const fx = f.x || (36 + (index % 4) * 70);
-      const fy = f.y !== undefined ? f.y : Math.floor(index / 4) * 45;
+      // 使用绝对坐标（相对于预览区域）
+      const fx = f.x || (50 + (index % 5) * 60);
+      const fy = f.y !== undefined ? f.y : (index < 5 ? 20 : 70);
       
       // 如果正在拖拽，绘制高亮
       if (gameData.dragState.isDragging && gameData.dragState.dragIndex === index) {
         ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
-        drawRoundRect(fx - 15, y + 130 + fy - 15, 50, 50, 8);
+        drawRoundRect(fx - 20, y + 40 + fy - 20, 60, 60, 8);
         ctx.fill();
       }
       
-      ctx.font = '28px sans-serif';
+      ctx.font = '32px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(f.icon, fx, y + 140 + fy);
+      ctx.fillText(f.icon, fx, y + 60 + fy);
       
       // 提示文字
       ctx.fillStyle = CONFIG.colors.gray;
       ctx.font = '10px sans-serif';
-      ctx.fillText('👆 拖拽', fx, y + 165 + fy);
+      ctx.fillText('👆 拖拽', fx, y + 80 + fy);
     });
   } else {
     ctx.fillStyle = CONFIG.colors.gray;
