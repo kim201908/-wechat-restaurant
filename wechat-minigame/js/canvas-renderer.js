@@ -556,26 +556,17 @@ function handleTouch(x, y, gameData, activeTab) {
     return { type: 'tab', tab: tabs[tabIndex] };
   }
   
-  // 经营 Tab 子导航检测
+  // 经营 Tab 子导航检测（放宽 Y 范围，适配微信开发者工具）
   if (activeTab === 'business') {
-    const subNavY = CONFIG.statusBarHeight + 40;
-    const subNavHeight = 36;
-    
-    console.log(`[经营子导航] Y 范围:${subNavY}-${subNavY + subNavHeight}, 点击 Y:${y}, X:${x}`);
-    
-    // 只在子导航区域内才触发
-    if (y >= subNavY && y <= subNavY + subNavHeight && x >= 16 && x <= CONFIG.width - 16) {
+    // 渲染位置：Y=84-120，但微信开发者工具有偏移，放宽到 80-160
+    if (y >= 80 && y <= 160 && x >= 16 && x <= CONFIG.width - 16) {
       const subTabWidth = (CONFIG.width - 32) / 3;
       const subTabIndex = Math.floor((x - 16) / subTabWidth);
       const subTabs = ['restaurant', 'kitchen', 'delivery'];
       
-      console.log(`[经营子导航] ✅ 索引:${subTabIndex}, 宽度:${subTabWidth.toFixed(1)}, 结果:${subTabs[subTabIndex]}`);
-      
       if (subTabIndex >= 0 && subTabIndex < 3) {
         return { type: 'subtab', subtab: subTabs[subTabIndex], tabGroup: 'business' };
       }
-    } else {
-      console.log('[经营子导航] ❌ 不在区域内');
     }
     
     // 经营 - 厨房：雇佣厨师按钮
@@ -624,26 +615,17 @@ function handleTouch(x, y, gameData, activeTab) {
     }
   }
   
-  // 社交 Tab 子导航检测
+  // 社交 Tab 子导航检测（放宽 Y 范围）
   if (activeTab === 'social') {
-    const subNavY = CONFIG.statusBarHeight + 40;
-    const subNavHeight = 36;
-    
-    console.log(`[社交子导航] Y 范围:${subNavY}-${subNavY + subNavHeight}, 点击 Y:${y}, X:${x}`);
-    
-    // 只在子导航区域内才触发
-    if (y >= subNavY && y <= subNavY + subNavHeight && x >= 16 && x <= CONFIG.width - 16) {
+    // 渲染位置：Y=84-120，放宽到 80-160
+    if (y >= 80 && y <= 160 && x >= 16 && x <= CONFIG.width - 16) {
       const subTabWidth = (CONFIG.width - 32) / 3;
       const subTabIndex = Math.floor((x - 16) / subTabWidth);
       const subTabs = ['friends', 'rankings', 'events'];
       
-      console.log(`[社交子导航] ✅ 索引:${subTabIndex}, 结果:${subTabs[subTabIndex]}`);
-      
       if (subTabIndex >= 0 && subTabIndex < 3) {
         return { type: 'subtab', subtab: subTabs[subTabIndex], tabGroup: 'social' };
       }
-    } else {
-      console.log('[社交子导航] ❌ 不在区域内');
     }
     
     // 好友页：复制好友码按钮（严格边界）
@@ -656,26 +638,17 @@ function handleTouch(x, y, gameData, activeTab) {
     }
   }
   
-  // 商城 Tab 子导航检测
+  // 商城 Tab 子导航检测（放宽 Y 范围）
   if (activeTab === 'mall') {
-    const subNavY = CONFIG.statusBarHeight + 40;
-    const subNavHeight = 36;
-    
-    console.log(`[商城子导航] Y 范围:${subNavY}-${subNavY + subNavHeight}, 点击 Y:${y}, X:${x}`);
-    
-    // 只在子导航区域内才触发
-    if (y >= subNavY && y <= subNavY + subNavHeight && x >= 16 && x <= CONFIG.width - 16) {
+    // 渲染位置：Y=84-120，放宽到 80-160
+    if (y >= 80 && y <= 160 && x >= 16 && x <= CONFIG.width - 16) {
       const subTabWidth = (CONFIG.width - 32) / 3;
       const subTabIndex = Math.floor((x - 16) / subTabWidth);
       const subTabs = ['recommend', 'items', 'decorations'];
       
-      console.log(`[商城子导航] ✅ 索引:${subTabIndex}, 结果:${subTabs[subTabIndex]}`);
-      
       if (subTabIndex >= 0 && subTabIndex < 3) {
         return { type: 'subtab', subtab: subTabs[subTabIndex], tabGroup: 'mall' };
       }
-    } else {
-      console.log('[商城子导航] ❌ 不在区域内');
     }
     
     // 推荐页：首充礼包购买
