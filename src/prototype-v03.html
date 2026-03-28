@@ -1,0 +1,2644 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>我的中餐厅 - v0.3 留存机制版</title>
+  <style>
+    /* ========== 设计规范 ========== */
+    :root {
+      /* 配色方案 - 中国风 */
+      --primary-red: #C41E3A;      /* 中国红 */
+      --primary-gold: #FFD700;     /* 金色 */
+      --dark-red: #8B0000;         /* 深红 */
+      --cream: #FFF8DC;            /* 米白 */
+      --brown: #8B4513;            /* 棕色 */
+      --dark-brown: #5C3317;       /* 深棕 */
+      --green: #228B22;            /* 绿色 */
+      --gray: #696969;             /* 灰色 */
+      --purple: #9370DB;           /* 紫色 - 钻石 */
+      
+      /* 字体规范 */
+      --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-title: "STHeiti", "Microsoft YaHei", sans-serif;
+      
+      /* 尺寸规范 */
+      --spacing-xs: 4px;
+      --spacing-sm: 8px;
+      --spacing-md: 16px;
+      --spacing-lg: 24px;
+      --border-radius: 8px;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      font-family: var(--font-main);
+      background: linear-gradient(180deg, var(--cream) 0%, #FFE4B5 100%);
+      min-height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+    
+    /* ========== 通用组件 ========== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--spacing-sm) var(--spacing-md);
+      border: none;
+      border-radius: var(--border-radius);
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .btn:active {
+      transform: scale(0.95);
+    }
+    
+    .btn-primary {
+      background: linear-gradient(180deg, var(--primary-red) 0%, var(--dark-red) 100%);
+      color: white;
+    }
+    
+    .btn-gold {
+      background: linear-gradient(180deg, var(--primary-gold) 0%, #DAA520 100%);
+      color: var(--dark-brown);
+    }
+    
+    .btn-green {
+      background: linear-gradient(180deg, var(--green) 0%, #006400 100%);
+      color: white;
+    }
+    
+    .btn-purple {
+      background: linear-gradient(180deg, var(--purple) 0%, #6A5ACD 100%);
+      color: white;
+    }
+    
+    .btn-disabled {
+      background: #CCCCCC;
+      color: #666666;
+      cursor: not-allowed;
+    }
+    
+    .card {
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: var(--spacing-md);
+    }
+    
+    .icon {
+      font-size: 20px;
+      margin-right: var(--spacing-xs);
+    }
+    
+    /* ========== 顶部状态栏 ========== */
+    .status-bar {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: var(--spacing-sm);
+      background: linear-gradient(180deg, var(--dark-red) 0%, var(--primary-red) 100%);
+      color: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      flex-wrap: wrap;
+    }
+    
+    .status-item {
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+      font-weight: bold;
+      margin: 2px 4px;
+    }
+    
+    .status-item .icon {
+      font-size: 18px;
+      margin-right: 4px;
+    }
+    
+    /* 时段标识样式 */
+    .time-period-badge {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+    
+    /* ========== 底部导航栏 ========== */
+    .nav-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-around;
+      padding: var(--spacing-sm);
+      background: white;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+      z-index: 100;
+    }
+    
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: var(--spacing-xs) var(--spacing-sm);
+      color: var(--gray);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .nav-item.active {
+      color: var(--primary-red);
+    }
+    
+    .nav-item .icon {
+      font-size: 24px;
+      margin-bottom: 2px;
+    }
+    
+    /* ========== 主容器 ========== */
+    .container {
+      padding: var(--spacing-md);
+      padding-bottom: 80px;
+      height: calc(100vh - 120px);
+      overflow-y: auto;
+    }
+    
+    /* ========== 场景 ========== */
+    .scene {
+      display: none;
+    }
+    
+    .scene.active {
+      display: block;
+    }
+    
+    /* ========== Tab 切换 ========== */
+    .kitchen-tabs {
+      display: flex;
+      gap: var(--spacing-sm);
+      margin-bottom: var(--spacing-md);
+      border-bottom: 2px solid var(--brown);
+      padding-bottom: var(--spacing-sm);
+    }
+    
+    .kitchen-tab {
+      flex: 1;
+      padding: var(--spacing-sm) var(--spacing-md);
+      background: #E0E0E0;
+      border: none;
+      border-radius: var(--border-radius) var(--border-radius) 0 0;
+      font-size: 14px;
+      font-weight: bold;
+      color: var(--gray);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .kitchen-tab.active {
+      background: var(--primary-red);
+      color: white;
+    }
+    
+    .kitchen-tab-content {
+      display: none;
+    }
+    
+    .kitchen-tab-content.active {
+      display: block;
+    }
+    
+    /* ========== 主界面 ========== */
+    .restaurant-scene {
+      position: relative;
+      height: 400px;
+      background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);
+      border-radius: var(--border-radius);
+      margin-bottom: var(--spacing-md);
+      overflow: hidden;
+      border: 3px solid var(--brown);
+    }
+    
+    .restaurant-floor {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60%;
+      background: repeating-linear-gradient(
+        90deg,
+        #DEB887 0px,
+        #DEB887 40px,
+        #D2B48C 40px,
+        #D2B48C 80px
+      );
+    }
+    
+    .furniture {
+      position: absolute;
+      font-size: 40px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    
+    .furniture:active {
+      transform: scale(1.1);
+    }
+    
+    .customer {
+      position: absolute;
+      font-size: 32px;
+      animation: bounce 2s infinite;
+    }
+    
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    .earnings-popup {
+      position: absolute;
+      background: var(--primary-gold);
+      color: var(--dark-brown);
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 14px;
+      animation: floatUp 1s forwards;
+      pointer-events: none;
+    }
+    
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-50px); }
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .stat-card {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: var(--spacing-md);
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .stat-card .value {
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--primary-red);
+    }
+    
+    .stat-card .label {
+      font-size: 12px;
+      color: var(--gray);
+      margin-top: 4px;
+    }
+    
+    /* ========== 外卖场景样式 ========== */
+    .delivery-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--spacing-sm);
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .delivery-stat-card {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: var(--spacing-sm);
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .delivery-stat-card .value {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--primary-red);
+    }
+    
+    .delivery-stat-card .label {
+      font-size: 10px;
+      color: var(--gray);
+      margin-top: 2px;
+    }
+    
+    .delivery-controls {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: var(--spacing-md);
+      margin-bottom: var(--spacing-md);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .delivery-generate-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-md);
+      padding-bottom: var(--spacing-md);
+      border-bottom: 1px solid #E0E0E0;
+    }
+    
+    .delivery-generate-info {
+      flex: 1;
+    }
+    
+    .delivery-generate-info .title {
+      font-size: 14px;
+      font-weight: bold;
+      color: var(--dark-brown);
+    }
+    
+    .delivery-generate-info .desc {
+      font-size: 12px;
+      color: var(--gray);
+      margin-top: 4px;
+    }
+    
+    .order-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .order-card {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: var(--spacing-md);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .order-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--gray);
+    }
+    
+    .order-card.status-delivering::before {
+      background: var(--primary-gold);
+    }
+    
+    .order-card.status-ready::before {
+      background: var(--green);
+    }
+    
+    .order-card.status-cancelled::before {
+      background: var(--dark-red);
+      opacity: 0.5;
+    }
+    
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .order-id {
+      font-size: 12px;
+      color: var(--gray);
+    }
+    
+    .order-amount {
+      font-size: 20px;
+      font-weight: bold;
+      color: var(--primary-red);
+    }
+    
+    .order-timer {
+      font-size: 14px;
+      color: var(--gray);
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .order-timer.urgent {
+      color: var(--dark-red);
+      font-weight: bold;
+    }
+    
+    .order-actions {
+      display: flex;
+      gap: var(--spacing-sm);
+    }
+    
+    .medals-section {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: var(--spacing-md);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .medals-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: var(--dark-brown);
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .medals-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--spacing-md);
+    }
+    
+    .medal-item {
+      text-align: center;
+      opacity: 0.3;
+      transition: all 0.3s;
+    }
+    
+    .medal-item.unlocked {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+    
+    .medal-icon {
+      font-size: 40px;
+      margin-bottom: var(--spacing-xs);
+    }
+    
+    .medal-desc {
+      font-size: 10px;
+      color: var(--gray);
+    }
+    
+    /* ========== 装修界面 ========== */
+    .furniture-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .furniture-item {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: var(--spacing-md);
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .furniture-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .furniture-item .icon {
+      font-size: 40px;
+      display: block;
+      margin-bottom: var(--spacing-xs);
+    }
+    
+    .furniture-item .name {
+      font-size: 12px;
+      color: var(--dark-brown);
+    }
+    
+    .furniture-item .price {
+      font-size: 14px;
+      color: var(--primary-red);
+      font-weight: bold;
+    }
+    
+    .preview-area {
+      height: 300px;
+      background: repeating-linear-gradient(
+        90deg,
+        #DEB887 0px,
+        #DEB887 40px,
+        #D2B48C 40px,
+        #D2B48C 80px
+      );
+      border: 2px dashed var(--brown);
+      border-radius: var(--border-radius);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .preview-furniture {
+      position: absolute;
+      font-size: 40px;
+      cursor: move;
+    }
+    
+    /* ========== 厨师管理界面 ========== */
+    .chef-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+    
+    .chef-card {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: var(--spacing-md);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+    }
+    
+    .chef-avatar {
+      font-size: 48px;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--cream);
+      border-radius: 50%;
+    }
+    
+    .chef-info {
+      flex: 1;
+    }
+    
+    .chef-name {
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--dark-brown);
+    }
+    
+    .chef-level {
+      font-size: 12px;
+      color: var(--gray);
+      margin-top: 4px;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #E0E0E0;
+      border-radius: 4px;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary-gold) 0%, var(--primary-red) 100%);
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+    
+    .chef-actions {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-xs);
+    }
+    
+    /* ========== 菜品管理界面 ========== */
+    .dish-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--spacing-md);
+    }
+    
+    .dish-card {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: var(--spacing-md);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    
+    .dish-icon {
+      font-size: 48px;
+      margin-bottom: var(--spacing-xs);
+    }
+    
+    .dish-name {
+      font-size: 14px;
+      font-weight: bold;
+      color: var(--dark-brown);
+    }
+    
+    .dish-level {
+      font-size: 12px;
+      color: var(--gray);
+      margin-top: 4px;
+    }
+    
+    .dish-stats {
+      display: flex;
+      justify-content: space-around;
+      margin-top: var(--spacing-sm);
+      font-size: 12px;
+    }
+    
+    .dish-stats .stat {
+      color: var(--primary-red);
+      font-weight: bold;
+    }
+    
+    .locked {
+      opacity: 0.5;
+      filter: grayscale(100%);
+    }
+    
+    .lock-icon {
+      position: absolute;
+      font-size: 32px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    
+    /* ========== 设施升级界面 ========== */
+    .facility-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--spacing-md);
+    }
+    
+    .facility-card {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: var(--spacing-md);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    
+    .facility-icon {
+      font-size: 48px;
+      margin-bottom: var(--spacing-xs);
+    }
+    
+    .facility-name {
+      font-size: 14px;
+      font-weight: bold;
+      color: var(--dark-brown);
+    }
+    
+    .facility-level {
+      font-size: 12px;
+      color: var(--gray);
+      margin-top: 4px;
+    }
+    
+    .facility-effect {
+      font-size: 11px;
+      color: var(--green);
+      margin-top: var(--spacing-xs);
+    }
+    
+    /* ========== 任务系统 UI ========== */
+    .tasks-section {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: var(--spacing-md);
+      margin-bottom: var(--spacing-md);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .tasks-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-md);
+      padding-bottom: var(--spacing-md);
+      border-bottom: 1px solid #E0E0E0;
+    }
+    
+    .tasks-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--dark-brown);
+    }
+    
+    .tasks-refresh-info {
+      font-size: 12px;
+      color: var(--gray);
+    }
+    
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+    
+    .task-card {
+      background: #F8F8F8;
+      border-radius: var(--border-radius);
+      padding: var(--spacing-md);
+      border: 2px solid #E0E0E0;
+      transition: all 0.2s;
+    }
+    
+    .task-card.completed {
+      border-color: var(--green);
+      background: #F0FFF0;
+    }
+    
+    .task-card.claimed {
+      opacity: 0.6;
+      border-color: #CCCCCC;
+    }
+    
+    .task-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .task-name {
+      font-size: 14px;
+      font-weight: bold;
+      color: var(--dark-brown);
+    }
+    
+    .task-reward {
+      font-size: 12px;
+      color: var(--primary-red);
+      font-weight: bold;
+    }
+    
+    .task-progress {
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .task-progress-bar {
+      width: 100%;
+      height: 10px;
+      background: #E0E0E0;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    
+    .task-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary-gold) 0%, var(--primary-red) 100%);
+      border-radius: 5px;
+      transition: width 0.3s;
+    }
+    
+    .task-progress-text {
+      font-size: 12px;
+      color: var(--gray);
+      margin-top: 4px;
+      text-align: right;
+    }
+    
+    .task-actions {
+      display: flex;
+      gap: var(--spacing-sm);
+    }
+    
+    .task-claim-btn {
+      flex: 1;
+    }
+    
+    /* ========== 登录奖励 UI ========== */
+    .login-rewards-section {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: var(--spacing-md);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .login-rewards-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--dark-brown);
+      margin-bottom: var(--spacing-md);
+      text-align: center;
+    }
+    
+    .login-calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: var(--spacing-xs);
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .login-day {
+      background: #F0F0F0;
+      border-radius: var(--border-radius);
+      padding: var(--spacing-sm);
+      text-align: center;
+      position: relative;
+      border: 2px solid #E0E0E0;
+    }
+    
+    .login-day.current {
+      border-color: var(--primary-gold);
+      background: #FFF8DC;
+      transform: scale(1.05);
+    }
+    
+    .login-day.claimed {
+      background: #E0FFE0;
+      border-color: var(--green);
+    }
+    
+    .login-day-number {
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--dark-brown);
+    }
+    
+    .login-day-reward {
+      font-size: 20px;
+      margin: var(--spacing-xs) 0;
+    }
+    
+    .login-day-amount {
+      font-size: 10px;
+      color: var(--gray);
+    }
+    
+    .login-day-claimed-mark {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      font-size: 12px;
+      color: var(--green);
+    }
+    
+    .login-today-reward {
+      text-align: center;
+      padding: var(--spacing-md);
+      background: linear-gradient(180deg, var(--cream) 0%, #FFE4B5 100%);
+      border-radius: var(--border-radius);
+      margin-top: var(--spacing-md);
+    }
+    
+    .login-today-title {
+      font-size: 14px;
+      color: var(--dark-brown);
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .login-today-amount {
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--primary-red);
+      margin-bottom: var(--spacing-md);
+    }
+    
+    /* ========== 提示框 ========== */
+    .toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: var(--spacing-md) var(--spacing-lg);
+      border-radius: var(--border-radius);
+      font-size: 14px;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    
+    .toast.show {
+      opacity: 1;
+    }
+    
+    /* ========== 模态框 ========== */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+    
+    .modal-overlay.show {
+      display: flex;
+    }
+    
+    .modal {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: var(--spacing-lg);
+      max-width: 320px;
+      width: 90%;
+      text-align: center;
+    }
+    
+    .modal-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--dark-brown);
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .modal-content {
+      font-size: 14px;
+      color: var(--gray);
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .modal-actions {
+      display: flex;
+      gap: var(--spacing-md);
+      justify-content: center;
+    }
+    
+    /* ========== 登录奖励弹窗 ========== */
+    .login-bonus-modal {
+      background: linear-gradient(180deg, var(--cream) 0%, #FFE4B5 100%);
+      border: 3px solid var(--primary-gold);
+    }
+    
+    .login-bonus-icon {
+      font-size: 64px;
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .login-bonus-amount {
+      font-size: 28px;
+      font-weight: bold;
+      color: var(--primary-red);
+      margin-bottom: var(--spacing-md);
+    }
+  </style>
+</head>
+<body>
+  <!-- 顶部状态栏 -->
+  <div class="status-bar">
+    <div class="status-item">
+      <span class="icon">🪙</span>
+      <span id="coins">1000</span>
+    </div>
+    <div class="status-item">
+      <span class="icon">⭐</span>
+      <span id="reputation">100</span>
+    </div>
+    <div class="status-item">
+      <span class="icon">💎</span>
+      <span id="diamonds">0</span>
+    </div>
+    <div class="status-item">
+      <span class="icon">🕐</span>
+      <span id="game-time">08:00</span>
+    </div>
+    <div class="status-item">
+      <span class="icon">📊</span>
+      <span id="time-period" class="time-period-badge">早餐</span>
+    </div>
+    <div class="status-item">
+      <span class="icon">👨‍🍳</span>
+      <span id="chef-count">1</span>
+    </div>
+    <div class="status-item">
+      <span class="icon">📅</span>
+      <span id="day">第 1 天</span>
+    </div>
+  </div>
+  
+  <!-- 主容器 -->
+  <div class="container">
+    <!-- 主界面场景：餐厅 -->
+    <div id="scene-main" class="scene active">
+      <!-- 餐厅 Tab 切换 -->
+      <div class="kitchen-tabs" style="margin-bottom: var(--spacing-md);">
+        <button class="kitchen-tab active" data-tab="manage" onclick="restaurant.switchTab('manage')">
+          🏪 经营
+        </button>
+        <button class="kitchen-tab" data-tab="decor" onclick="restaurant.switchTab('decor')">
+          🎨 装修
+        </button>
+        <button class="kitchen-tab" data-tab="tasks" onclick="restaurant.switchTab('tasks')">
+          📋 任务
+        </button>
+      </div>
+      
+      <!-- 经营子页面 -->
+      <div id="restaurant-tab-manage" class="kitchen-tab-content active">
+        <div class="restaurant-scene" id="restaurant-scene">
+          <div class="restaurant-floor"></div>
+          <!-- 桌椅表示空位数量 -->
+          <div class="furniture" style="bottom: 80px; left: 20px;">🪑</div>
+          <div class="furniture" style="bottom: 80px; right: 20px;">🪑</div>
+          <div class="furniture" style="bottom: 120px; left: 50%; transform: translateX(-50%);">🍳</div>
+          <div class="furniture" style="bottom: 40px; left: 50%; transform: translateX(-50%);">👨‍🍳</div>
+          <!-- 顾客由系统自动生成 -->
+        </div>
+        
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="value" id="served-count">0</div>
+            <div class="label">已接待顾客</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" id="total-earnings">0</div>
+            <div class="label">总收益</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" id="restaurant-level">1</div>
+            <div class="label">餐厅等级</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" id="dish-count">3</div>
+            <div class="label">菜品数量</div>
+          </div>
+        </div>
+        
+        <p style="text-align: center; color: var(--gray); font-size: 12px;">
+          🎯 自动经营中 - 顾客会自动进店
+        </p>
+      </div>
+      
+      <!-- 装修子页面 -->
+      <div id="restaurant-tab-decor" class="kitchen-tab-content">
+        <div class="preview-area" id="preview-area">
+          <div class="preview-furniture" style="bottom: 50px; left: 50px;" data-type="table">🪑</div>
+          <div class="preview-furniture" style="bottom: 150px; left: 200px;" data-type="stove">🍳</div>
+        </div>
+        
+        <p style="font-size: 12px; color: var(--gray); margin: var(--spacing-sm) 0;">拖拽家具调整位置</p>
+        
+        <h3 style="margin: var(--spacing-md) 0 var(--spacing-sm); color: var(--dark-brown);">可用家具</h3>
+        
+        <div class="furniture-grid">
+          <div class="furniture-item" onclick="decor.addFurniture('table', '🪑', 100)">
+            <span class="icon">🪑</span>
+            <div class="name">餐桌</div>
+            <div class="price">💰 100</div>
+          </div>
+          <div class="furniture-item" onclick="decor.addFurniture('chair', '💺', 50)">
+            <span class="icon">💺</span>
+            <div class="name">椅子</div>
+            <div class="price">💰 50</div>
+          </div>
+          <div class="furniture-item" onclick="decor.addFurniture('stove', '🍳', 300)">
+            <span class="icon">🍳</span>
+            <div class="name">炉灶</div>
+            <div class="price">💰 300</div>
+          </div>
+          <div class="furniture-item" onclick="decor.addFurniture('plant', '🪴', 80)">
+            <span class="icon">🪴</span>
+            <div class="name">盆栽</div>
+            <div class="price">💰 80</div>
+          </div>
+          <div class="furniture-item" onclick="decor.addFurniture('lamp', '🏮', 120)">
+            <span class="icon">🏮</span>
+            <div class="name">灯笼</div>
+            <div class="price">💰 120</div>
+          </div>
+          <div class="furniture-item" onclick="decor.addFurniture('counter', '🧾', 200)">
+            <span class="icon">🧾</span>
+            <div class="name">收银台</div>
+            <div class="price">💰 200</div>
+          </div>
+        </div>
+        
+        <button class="btn btn-primary" style="width: 100%;" onclick="decor.saveLayout()">
+          <span class="icon">💾</span> 保存布局
+        </button>
+      </div>
+      
+      <!-- 任务子页面 - 新增 -->
+      <div id="restaurant-tab-tasks" class="kitchen-tab-content">
+        <!-- 每日任务区域 -->
+        <div class="tasks-section">
+          <div class="tasks-header">
+            <div class="tasks-title">📋 每日任务</div>
+            <div class="tasks-refresh-info">
+              刷新：<span id="task-reset-time">05:00</span> | 手动刷新：<span id="manual-refresh-count">1</span>次
+            </div>
+          </div>
+          
+          <div class="task-list" id="daily-task-list">
+            <!-- 任务卡片由 JS 动态生成 -->
+          </div>
+          
+          <div style="margin-top: var(--spacing-md); display: flex; gap: var(--spacing-sm);">
+            <button class="btn btn-gold" style="flex: 1;" onclick="tasks.claimAllRewards()">
+              <span class="icon">💰</span> 一键领取全部
+            </button>
+            <button class="btn btn-purple" style="flex: 1;" onclick="tasks.refreshTasks()">
+              <span class="icon">🔄</span> 刷新任务
+            </button>
+          </div>
+        </div>
+        
+        <!-- 连续登录奖励区域 -->
+        <div class="login-rewards-section">
+          <div class="login-rewards-title">🎁 连续登录奖励</div>
+          
+          <div class="login-calendar" id="login-calendar">
+            <!-- 日历由 JS 动态生成 -->
+          </div>
+          
+          <div class="login-today-reward" id="login-today-reward">
+            <div class="login-today-title">今日奖励</div>
+            <div class="login-today-amount" id="login-today-amount">--</div>
+            <button class="btn btn-primary" id="btn-claim-login" onclick="tasks.claimLoginReward()">
+              <span class="icon">🎁</span> 领取今日奖励
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 厨房场景：整合厨师、菜品、设施三个子页面 -->
+    <div id="scene-kitchen" class="scene">
+      <h2 style="margin-bottom: var(--spacing-md); color: var(--dark-brown);">🍳 厨房管理</h2>
+      
+      <!-- Tab 切换 -->
+      <div class="kitchen-tabs">
+        <button class="kitchen-tab active" data-tab="chef" onclick="kitchen.switchTab('chef')">
+          👨‍🍳 厨师
+        </button>
+        <button class="kitchen-tab" data-tab="dish" onclick="kitchen.switchTab('dish')">
+          🍜 菜品
+        </button>
+        <button class="kitchen-tab" data-tab="facility" onclick="kitchen.switchTab('facility')">
+          🔧 设施
+        </button>
+      </div>
+      
+      <!-- 厨师管理页面 -->
+      <div id="kitchen-tab-chef" class="kitchen-tab-content active">
+        <div class="chef-list" id="chef-list">
+          <!-- 厨师卡片由 JS 动态生成 -->
+        </div>
+        
+        <button class="btn btn-primary" style="width: 100%; margin-top: var(--spacing-md);" onclick="kitchen.recruitChef()">
+          <span class="icon">📢</span> 雇佣新厨师 (💰 500)
+        </button>
+      </div>
+      
+      <!-- 菜品管理页面 -->
+      <div id="kitchen-tab-dish" class="kitchen-tab-content">
+        <div class="dish-grid" id="dish-grid">
+          <!-- 菜品卡片由 JS 动态生成 -->
+        </div>
+      </div>
+      
+      <!-- 设施升级页面 -->
+      <div id="kitchen-tab-facility" class="kitchen-tab-content">
+        <div class="facility-grid" id="facility-grid">
+          <!-- 设施卡片由 JS 动态生成 -->
+        </div>
+      </div>
+    </div>
+    
+    <!-- 外卖场景 -->
+    <div id="scene-delivery" class="scene">
+      <h2 style="margin-bottom: var(--spacing-md); color: var(--dark-brown);">🛵 外卖订单</h2>
+      
+      <!-- 统计面板 -->
+      <div class="delivery-stats-grid">
+        <div class="delivery-stat-card">
+          <div class="value" id="delivery-today-count">0</div>
+          <div class="label">今日单数</div>
+        </div>
+        <div class="delivery-stat-card">
+          <div class="value" id="delivery-today-earnings">¥0</div>
+          <div class="label">今日收入</div>
+        </div>
+        <div class="delivery-stat-card">
+          <div class="value" id="delivery-total-earnings">¥0</div>
+          <div class="label">历史总收入</div>
+        </div>
+      </div>
+      
+      <!-- 连续收割统计 -->
+      <div class="delivery-stat-card" style="margin-bottom: var(--spacing-md);">
+        <div class="value" id="delivery-streak">0</div>
+        <div class="label">连续收割订单</div>
+      </div>
+      
+      <!-- 订单生成控制 -->
+      <div class="delivery-controls">
+        <div class="delivery-generate-section">
+          <div class="delivery-generate-info">
+            <div class="title">📦 生成新订单</div>
+            <div class="desc">每日上限 20 单 | 当前：<span id="delivery-generated-count">0</span>/20</div>
+          </div>
+          <button class="btn btn-primary" id="btn-generate-order" onclick="delivery.generateOrder()">
+            <span class="icon">➕</span> 生成订单
+          </button>
+        </div>
+      </div>
+      
+      <!-- 订单列表 -->
+      <div class="order-list" id="order-list">
+        <!-- 订单卡片由 JS 动态生成 -->
+      </div>
+      
+      <!-- 勋章展示 -->
+      <div class="medals-section">
+        <div class="medals-title">🏆 成就勋章</div>
+        <div class="medals-grid">
+          <div class="medal-item" id="medal-5">
+            <div class="medal-icon">🏆</div>
+            <div class="medal-desc">连续 5 单</div>
+          </div>
+          <div class="medal-item" id="medal-10">
+            <div class="medal-icon">🥇</div>
+            <div class="medal-desc">连续 10 单</div>
+          </div>
+          <div class="medal-item" id="medal-20">
+            <div class="medal-icon">👑</div>
+            <div class="medal-desc">连续 20 单</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+
+  </div>
+  
+  <!-- 底部导航栏 - v0.3：保持 3 个主场景 -->
+  <div class="nav-bar">
+    <div class="nav-item active" data-scene="main" onclick="game.switchScene('main')">
+      <span class="icon">🏠</span>
+      <span>餐厅</span>
+    </div>
+    <div class="nav-item" data-scene="kitchen" onclick="game.switchScene('kitchen')">
+      <span class="icon">🍳</span>
+      <span>厨房</span>
+    </div>
+    <div class="nav-item" data-scene="delivery" onclick="game.switchScene('delivery')">
+      <span class="icon">🛵</span>
+      <span>外卖</span>
+    </div>
+  </div>
+  
+  <!-- 提示框 -->
+  <div class="toast" id="toast">操作成功!</div>
+  
+  <!-- 模态框 -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <div class="modal-title" id="modal-title">提示</div>
+      <div class="modal-content" id="modal-content">内容</div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="modal-confirm">确认</button>
+        <button class="btn" id="modal-cancel" style="background: #E0E0E0;">取消</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 登录奖励弹窗 -->
+  <div class="modal-overlay" id="login-bonus-overlay">
+    <div class="modal login-bonus-modal">
+      <div class="login-bonus-icon">🎁</div>
+      <div class="modal-title">登录奖励</div>
+      <div class="login-bonus-amount" id="login-bonus-amount">💰 100 + 💎 5</div>
+      <div class="modal-content" id="login-bonus-extra"></div>
+      <button class="btn btn-primary" onclick="document.getElementById('login-bonus-overlay').classList.remove('show')">
+        谢谢！
+      </button>
+    </div>
+  </div>
+  
+  <script>
+    // ========== 游戏状态管理 ==========
+    const gameState = {
+      coins: 1000,
+      reputation: 100,
+      diamonds: 0,              // 新增：钻石货币
+      day: 1,
+      servedCount: 0,
+      totalEarnings: 0,
+      restaurantLevel: 1,
+      chefs: [
+        { name: '王师傅', level: 5, maxLevel: 10, exp: 50 }
+      ],
+      dishes: [
+        { name: '兰州拉面', icon: '🍜', level: 3, earnings: 15, cookTime: 3, unlocked: true },
+        { name: '水饺', icon: '🥟', level: 2, earnings: 12, cookTime: 2, unlocked: true },
+        { name: '炒饭', icon: '🍚', level: 1, earnings: 10, cookTime: 2, unlocked: true },
+        { name: '火锅', icon: '🍲', level: 1, earnings: 30, cookTime: 5, unlocked: false, unlockCost: 300 },
+        { name: '北京烤鸭', icon: '🦆', level: 1, earnings: 50, cookTime: 8, unlocked: false, unlockCost: 500 },
+        { name: '月饼', icon: '🥮', level: 1, earnings: 25, cookTime: 4, unlocked: false, unlockCost: 400 }
+      ],
+      facilities: [
+        { name: '炉灶', icon: '🍳', level: 1, maxLevel: 10, effect: '烹饪速度 +5%', upgradeCost: 200 },
+        { name: '冰箱', icon: '🧊', level: 1, maxLevel: 10, effect: '食材保鲜 +10%', upgradeCost: 150 },
+        { name: '工作台', icon: '🪚', level: 1, maxLevel: 10, effect: '备菜效率 +8%', upgradeCost: 180 },
+        { name: '油烟机', icon: '💨', level: 1, maxLevel: 10, effect: '环境评分 +5%', upgradeCost: 250 }
+      ],
+      furniture: [
+        { type: 'table', icon: '🪑', x: 50, y: 50 },
+        { type: 'stove', icon: '🍳', x: 200, y: 150 }
+      ],
+      customers: [],
+      // 游戏时间系统
+      gameTimeMinutes: 480, // 08:00 = 8*60 = 480 分钟
+      tableCount: 2, // 桌子数量，决定空位
+      
+      // 外卖系统数据
+      delivery: {
+        todayCount: 0,           // 今日订单数
+        todayEarnings: 0,        // 今日外卖收入
+        totalEarnings: 0,        // 外卖历史总收入
+        generatedCount: 0,       // 今日已生成订单数
+        streak: 0,               // 连续收割订单数
+        maxStreak: 0,            // 最大连续收割记录
+        orders: [],              // 当前订单列表
+        medals: {                // 勋章解锁状态
+          5: false,
+          10: false,
+          20: false
+        }
+      },
+      
+      // ========== 新增：任务与登录系统数据 ==========
+      tasks: {
+        dailyTasks: [],          // 每日任务列表
+        lastResetDate: '',       // 上次重置日期 (格式：YYYY-MM-DD)
+        loginStreak: 0,          // 连续登录天数
+        lastLoginDate: '',       // 上次登录日期 (格式：YYYY-MM-DD)
+        loginRewards: [false, false, false, false, false, false, false], // 7 天奖励领取状态
+        manualRefreshCount: 1    // 手动刷新次数 (每日 1 次)
+      }
+    };
+    
+    // 时间段定义
+    const TIME_PERIODS = {
+      BREAKFAST: { name: '早餐', start: 480, end: 660, multiplier: 1.0 },      // 08:00-11:00
+      LUNCH: { name: '午市', start: 660, end: 840, multiplier: 1.5 },          // 11:00-14:00
+      DINNER: { name: '晚市', start: 1020, end: 1260, multiplier: 2.0 },       // 17:00-21:00
+      LATE: { name: '深夜', start: 1260, end: 1320, multiplier: 0.5 }          // 21:00-22:00
+    };
+    
+    // ========== 每日任务配置 ==========
+    const TASK_TEMPLATES = [
+      { id: 'serve_customers', name: '服务顾客', type: '经营类', target: 20, rewardCoins: 100, rewardExp: 30, rewardDiamonds: 5 },
+      { id: 'earn_coins', name: '赚取金币', type: '经营类', target: 2000, rewardCoins: 150, rewardExp: 40, rewardDiamonds: 8 },
+      { id: 'upgrade_facility', name: '升级设施', type: '升级类', target: 1, rewardCoins: 80, rewardExp: 25, rewardDiamonds: 5 },
+      { id: 'upgrade_dish', name: '升级菜品', type: '升级类', target: 1, rewardCoins: 80, rewardExp: 25, rewardDiamonds: 5 },
+      { id: 'delivery_orders', name: '完成外卖订单', type: '外卖类', target: 5, rewardCoins: 120, rewardExp: 35, rewardDiamonds: 10 },
+      { id: 'collect_coins', name: '收取金币', type: '收集类', target: 30, rewardCoins: 60, rewardExp: 20, rewardDiamonds: 5 }
+    ];
+    
+    // 连续登录奖励配置
+    const LOGIN_REWARDS = [
+      { day: 1, coins: 100, diamonds: 5, extra: null },
+      { day: 2, coins: 150, diamonds: 5, extra: null },
+      { day: 3, coins: 200, diamonds: 10, extra: { type: 'item', name: '加速道具', count: 1 } },
+      { day: 4, coins: 250, diamonds: 10, extra: null },
+      { day: 5, coins: 300, diamonds: 15, extra: null },
+      { day: 6, coins: 400, diamonds: 15, extra: null },
+      { day: 7, coins: 500, diamonds: 30, extra: { type: 'decoration', name: '⭐ 限定装饰', count: 1 } }
+    ];
+    
+    // ========== 餐厅模块（整合经营、装修、任务） ==========
+    const restaurant = {
+      currentTab: 'manage',
+      
+      // Tab 切换
+      switchTab(tabName) {
+        // 隐藏所有 tab 内容
+        document.querySelectorAll('#scene-main .kitchen-tab-content').forEach(content => {
+          content.classList.remove('active');
+        });
+        
+        // 取消所有 tab 激活状态
+        document.querySelectorAll('#scene-main .kitchen-tab').forEach(tab => {
+          tab.classList.remove('active');
+        });
+        
+        // 激活目标 tab
+        document.getElementById(`restaurant-tab-${tabName}`).classList.add('active');
+        document.querySelector(`#scene-main .kitchen-tab[data-tab="${tabName}"]`).classList.add('active');
+        
+        this.currentTab = tabName;
+        
+        // 如果切换到装修 tab，初始化拖拽
+        if (tabName === 'decor') {
+          decor.setupDragDrop();
+        }
+        
+        // 如果切换到任务 tab，刷新任务界面
+        if (tabName === 'tasks') {
+          tasks.renderTaskList();
+          tasks.renderLoginCalendar();
+          tasks.updateLoginTodayReward();
+        }
+      }
+    };
+    
+    // ========== 厨房模块（整合厨师、菜品、设施） ==========
+    const kitchen = {
+      currentTab: 'chef',
+      
+      // 初始化厨房模块
+      init() {
+        this.renderChefList();
+        this.renderDishGrid();
+        this.renderFacilityGrid();
+      },
+      
+      // Tab 切换
+      switchTab(tabName) {
+        // 隐藏所有 tab 内容
+        document.querySelectorAll('.kitchen-tab-content').forEach(content => {
+          content.classList.remove('active');
+        });
+        
+        // 取消所有 tab 激活状态
+        document.querySelectorAll('.kitchen-tab').forEach(tab => {
+          tab.classList.remove('active');
+        });
+        
+        // 激活目标 tab
+        document.getElementById(`kitchen-tab-${tabName}`).classList.add('active');
+        document.querySelector(`.kitchen-tab[data-tab="${tabName}"]`).classList.add('active');
+        
+        this.currentTab = tabName;
+      },
+      
+      // 渲染厨师列表
+      renderChefList() {
+        const container = document.getElementById('chef-list');
+        container.innerHTML = gameState.chefs.map((chef, index) => `
+          <div class="chef-card">
+            <div class="chef-avatar">${index === 0 ? '👨‍🍳' : '👩‍🍳'}</div>
+            <div class="chef-info">
+              <div class="chef-name">${chef.name}</div>
+              <div class="chef-level">等级 ${chef.level} / ${chef.maxLevel}</div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: ${(chef.level / chef.maxLevel) * 100}%"></div>
+              </div>
+            </div>
+            <div class="chef-actions">
+              <button class="btn btn-gold" onclick="kitchen.upgradeChef(${index})" ${chef.level >= chef.maxLevel ? 'disabled class="btn-disabled"' : ''}>
+                💰 ${chef.level * 50}
+              </button>
+            </div>
+          </div>
+        `).join('');
+      },
+      
+      // 升级厨师
+      upgradeChef(index) {
+        const chef = gameState.chefs[index];
+        const cost = chef.level * 50;
+        
+        if (gameState.coins < cost) {
+          game.showToast('金币不足!');
+          return;
+        }
+        
+        if (chef.level >= chef.maxLevel) {
+          game.showToast('已达最高等级');
+          return;
+        }
+        
+        gameState.coins -= cost;
+        chef.level++;
+        chef.exp = 0;
+        
+        // 更新任务进度
+        tasks.updateTaskProgress('upgrade_chef');
+        
+        game.updateUI();
+        game.showToast(`${chef.name} 升级到 Lv.${chef.level}!`);
+        this.renderChefList();
+      },
+      
+      // 雇佣新厨师
+      recruitChef() {
+        const cost = 500;
+        if (gameState.coins < cost) {
+          game.showToast('金币不足!');
+          return;
+        }
+        
+        gameState.coins -= cost;
+        const names = ['张师傅', '刘师傅', '陈师傅', '赵师傅'];
+        gameState.chefs.push({
+          name: names[Math.floor(Math.random() * names.length)],
+          level: 1,
+          maxLevel: 10,
+          exp: 0
+        });
+        
+        game.updateUI();
+        game.showToast('雇佣成功!');
+        this.renderChefList();
+      },
+      
+      // 渲染菜品列表
+      renderDishGrid() {
+        const container = document.getElementById('dish-grid');
+        container.innerHTML = gameState.dishes.map((dish, index) => {
+          if (dish.unlocked) {
+            return `
+              <div class="dish-card">
+                <div class="dish-icon">${dish.icon}</div>
+                <div class="dish-name">${dish.name}</div>
+                <div class="dish-level">等级 ${dish.level}</div>
+                <div class="dish-stats">
+                  <span>收益：<span class="stat">+${dish.earnings}</span></span>
+                  <span>耗时：<span class="stat">${dish.cookTime}s</span></span>
+                </div>
+                <button class="btn btn-gold" style="margin-top: var(--spacing-sm);" onclick="kitchen.upgradeDish(${index})">
+                  💰 ${dish.level * 50} 升级
+                </button>
+              </div>
+            `;
+          } else {
+            return `
+              <div class="dish-card locked" style="position: relative;">
+                <div class="lock-icon">🔒</div>
+                <div class="dish-icon">${dish.icon}</div>
+                <div class="dish-name">${dish.name}</div>
+                <div class="dish-level">未解锁</div>
+                <div class="dish-stats">
+                  <span>收益：<span class="stat">+${dish.earnings}</span></span>
+                  <span>耗时：<span class="stat">${dish.cookTime}s</span></span>
+                </div>
+                <button class="btn btn-primary" style="margin-top: var(--spacing-sm);" onclick="kitchen.unlockDish(${index})">
+                  🔓 ${dish.unlockCost} 解锁
+                </button>
+              </div>
+            `;
+          }
+        }).join('');
+      },
+      
+      // 升级菜品
+      upgradeDish(index) {
+        const dish = gameState.dishes[index];
+        const cost = dish.level * 50;
+        
+        if (gameState.coins < cost) {
+          game.showToast('金币不足!');
+          return;
+        }
+        
+        gameState.coins -= cost;
+        dish.level++;
+        dish.earnings += 5;
+        
+        // 更新任务进度
+        tasks.updateTaskProgress('upgrade_dish');
+        
+        game.updateUI();
+        game.showToast(`${dish.name} 升级到 Lv.${dish.level}!`);
+        this.renderDishGrid();
+      },
+      
+      // 解锁菜品
+      unlockDish(index) {
+        const dish = gameState.dishes[index];
+        
+        if (gameState.coins < dish.unlockCost) {
+          game.showToast('金币不足!');
+          return;
+        }
+        
+        gameState.coins -= dish.unlockCost;
+        dish.unlocked = true;
+        
+        game.updateUI();
+        game.showToast(`解锁 ${dish.name}!`);
+        this.renderDishGrid();
+      },
+      
+      // 渲染设施列表
+      renderFacilityGrid() {
+        const container = document.getElementById('facility-grid');
+        container.innerHTML = gameState.facilities.map((facility, index) => `
+          <div class="facility-card">
+            <div class="facility-icon">${facility.icon}</div>
+            <div class="facility-name">${facility.name}</div>
+            <div class="facility-level">等级 ${facility.level} / ${facility.maxLevel}</div>
+            <div class="facility-effect">${facility.effect}</div>
+            <button class="btn btn-gold" style="margin-top: var(--spacing-sm);" onclick="kitchen.upgradeFacility(${index})" ${facility.level >= facility.maxLevel ? 'disabled class="btn-disabled"' : ''}>
+              💰 ${facility.level * facility.upgradeCost} 升级
+            </button>
+          </div>
+        `).join('');
+      },
+      
+      // 升级设施
+      upgradeFacility(index) {
+        const facility = gameState.facilities[index];
+        const cost = facility.level * facility.upgradeCost;
+        
+        if (gameState.coins < cost) {
+          game.showToast('金币不足!');
+          return;
+        }
+        
+        if (facility.level >= facility.maxLevel) {
+          game.showToast('已达最高等级');
+          return;
+        }
+        
+        gameState.coins -= cost;
+        facility.level++;
+        
+        // 更新任务进度
+        tasks.updateTaskProgress('upgrade_facility');
+        
+        game.updateUI();
+        game.showToast(`${facility.name} 升级到 Lv.${facility.level}!`);
+        this.renderFacilityGrid();
+      }
+    };
+    
+    // ========== 外卖系统逻辑 ==========
+    const delivery = {
+      orderTimer: null,
+      
+      // 初始化外卖系统
+      init() {
+        this.updateUI();
+        this.startOrderTimer();
+      },
+      
+      // 启动订单计时器（每秒更新倒计时）
+      startOrderTimer() {
+        this.orderTimer = setInterval(() => {
+          this.updateOrderTimers();
+        }, 1000);
+      },
+      
+      // 生成新订单
+      generateOrder() {
+        // 检查每日上限
+        if (gameState.delivery.generatedCount >= 20) {
+          game.showToast('今日订单已达上限！');
+          return;
+        }
+        
+        // 检查餐厅等级解锁（等级越高，订单金额上限越高）
+        const maxAmount = 15 + (gameState.restaurantLevel * 15);
+        const amount = Math.floor(Math.random() * (maxAmount - 15 + 1)) + 15;
+        
+        // 配送时间：2-4 分钟（测试用加速版，实际是秒）
+        const deliveryTime = Math.floor(Math.random() * 120) + 120; // 120-240 秒（2-4 分钟）
+        
+        const order = {
+          id: Date.now(),
+          amount: amount,
+          deliveryTime: deliveryTime,
+          remainingTime: deliveryTime,
+          status: 'delivering',
+          createdAt: Date.now(),
+          readyAt: null
+        };
+        
+        gameState.delivery.orders.push(order);
+        gameState.delivery.generatedCount++;
+        
+        this.updateUI();
+        game.showToast(`生成新订单：¥${amount}`);
+        
+        // 模拟配送过程
+        this.simulateDelivery(order);
+      },
+      
+      // 模拟配送过程
+      simulateDelivery(order) {
+        const deliveryTimer = setInterval(() => {
+          if (order.status !== 'delivering') {
+            clearInterval(deliveryTimer);
+            return;
+          }
+          
+          order.remainingTime--;
+          
+          if (order.remainingTime <= 0) {
+            clearInterval(deliveryTimer);
+            order.status = 'ready';
+            order.readyAt = Date.now();
+            this.updateUI();
+            game.showToast('订单可收割！');
+            
+            this.startTimeoutTimer(order);
+          }
+        }, 1000);
+      },
+      
+      // 超时计时器
+      startTimeoutTimer(order) {
+        const timeoutTimer = setInterval(() => {
+          if (order.status !== 'ready') {
+            clearInterval(timeoutTimer);
+            return;
+          }
+          
+          const timeSinceReady = (Date.now() - order.readyAt) / 1000;
+          
+          if (timeSinceReady >= 120) {
+            clearInterval(timeoutTimer);
+            order.status = 'cancelled';
+            gameState.delivery.streak = 0;
+            this.updateUI();
+            game.showToast('订单已超时取消！');
+            
+            setTimeout(() => {
+              gameState.delivery.orders = gameState.delivery.orders.filter(o => o.id !== order.id);
+              this.updateUI();
+            }, 3000);
+          }
+        }, 1000);
+      },
+      
+      // 收割订单
+      collectOrder(orderId) {
+        const order = gameState.delivery.orders.find(o => o.id === orderId);
+        if (!order || order.status !== 'ready') {
+          return;
+        }
+        
+        order.status = 'completed';
+        
+        gameState.coins += order.amount;
+        gameState.delivery.todayEarnings += order.amount;
+        gameState.delivery.totalEarnings += order.amount;
+        gameState.delivery.todayCount++;
+        
+        gameState.delivery.streak++;
+        if (gameState.delivery.streak > gameState.delivery.maxStreak) {
+          gameState.delivery.maxStreak = gameState.delivery.streak;
+        }
+        
+        this.checkMedals();
+        
+        gameState.reputation += 2;
+        if (gameState.reputation >= gameState.restaurantLevel * 100) {
+          gameState.restaurantLevel++;
+          gameState.reputation = 0;
+          game.showToast(`🎉 餐厅升级到 ${gameState.restaurantLevel} 级！`);
+          gameState.tableCount++;
+        }
+        
+        // 更新任务进度
+        tasks.updateTaskProgress('delivery_orders');
+        
+        game.updateUI();
+        this.updateUI();
+        game.showToast(`收割订单：+¥${order.amount} | 连续 ${gameState.delivery.streak} 单`);
+        
+        setTimeout(() => {
+          gameState.delivery.orders = gameState.delivery.orders.filter(o => o.id !== order.id);
+          this.updateUI();
+        }, 2000);
+      },
+      
+      // 取消订单
+      cancelOrder(orderId) {
+        const order = gameState.delivery.orders.find(o => o.id === orderId);
+        if (!order) {
+          return;
+        }
+        
+        order.status = 'cancelled';
+        gameState.delivery.streak = 0;
+        
+        this.updateUI();
+        game.showToast('订单已取消');
+        
+        setTimeout(() => {
+          gameState.delivery.orders = gameState.delivery.orders.filter(o => o.id !== order.id);
+          this.updateUI();
+        }, 3000);
+      },
+      
+      // 检查勋章解锁
+      checkMedals() {
+        const streak = gameState.delivery.streak;
+        
+        if (streak >= 5 && !gameState.delivery.medals[5]) {
+          gameState.delivery.medals[5] = true;
+          game.showToast('🏆 解锁成就：连续 5 单！');
+        }
+        if (streak >= 10 && !gameState.delivery.medals[10]) {
+          gameState.delivery.medals[10] = true;
+          game.showToast('🥇 解锁成就：连续 10 单！');
+        }
+        if (streak >= 20 && !gameState.delivery.medals[20]) {
+          gameState.delivery.medals[20] = true;
+          game.showToast('👑 解锁成就：连续 20 单！');
+        }
+      },
+      
+      // 更新订单倒计时显示
+      updateOrderTimers() {
+        const now = Date.now();
+        
+        gameState.delivery.orders.forEach(order => {
+          const timerEl = document.getElementById(`order-timer-${order.id}`);
+          if (!timerEl) return;
+          
+          if (order.status === 'delivering') {
+            const minutes = Math.floor(order.remainingTime / 60);
+            const seconds = order.remainingTime % 60;
+            timerEl.textContent = `🚴 配送中：${minutes}:${seconds.toString().padStart(2, '0')}`;
+            timerEl.classList.remove('urgent');
+          } else if (order.status === 'ready') {
+            const timeSinceReady = Math.floor((now - order.readyAt) / 1000);
+            const timeLeft = 120 - timeSinceReady;
+            if (timeLeft > 0) {
+              const minutes = Math.floor(timeLeft / 60);
+              const seconds = timeLeft % 60;
+              timerEl.textContent = `⏰ 可收割！剩余：${minutes}:${seconds.toString().padStart(2, '0')}`;
+              if (timeLeft <= 30) {
+                timerEl.classList.add('urgent');
+              } else {
+                timerEl.classList.remove('urgent');
+              }
+            }
+          }
+        });
+      },
+      
+      // 渲染订单列表
+      renderOrderList() {
+        const container = document.getElementById('order-list');
+        
+        if (gameState.delivery.orders.length === 0) {
+          container.innerHTML = '<div style="text-align: center; color: var(--gray); padding: var(--spacing-lg);">暂无订单</div>';
+          return;
+        }
+        
+        container.innerHTML = gameState.delivery.orders.map(order => {
+          let statusText = '';
+          let actionButtons = '';
+          
+          if (order.status === 'delivering') {
+            statusText = '🚴 配送中';
+          } else if (order.status === 'ready') {
+            statusText = '✅ 可收割';
+            actionButtons = `
+              <button class="btn btn-green" onclick="delivery.collectOrder(${order.id})">
+                <span class="icon">💰</span> 收割
+              </button>
+              <button class="btn" style="background: #E0E0E0;" onclick="delivery.cancelOrder(${order.id})">
+                <span class="icon">❌</span> 取消
+              </button>
+            `;
+          } else if (order.status === 'cancelled') {
+            statusText = '❌ 已取消';
+          } else if (order.status === 'completed') {
+            statusText = '✅ 已完成';
+          }
+          
+          return `
+            <div class="order-card status-${order.status}">
+              <div class="order-header">
+                <div class="order-id">订单 #${order.id.toString().slice(-6)}</div>
+                <div class="order-amount">¥${order.amount}</div>
+              </div>
+              <div class="order-timer" id="order-timer-${order.id}">
+                ${statusText}
+              </div>
+              <div class="order-actions">
+                ${actionButtons}
+              </div>
+            </div>
+          `;
+        }).join('');
+      },
+      
+      // 更新外卖 UI
+      updateUI() {
+        document.getElementById('delivery-today-count').textContent = gameState.delivery.todayCount;
+        document.getElementById('delivery-today-earnings').textContent = `¥${gameState.delivery.todayEarnings}`;
+        document.getElementById('delivery-total-earnings').textContent = `¥${gameState.delivery.totalEarnings}`;
+        document.getElementById('delivery-streak').textContent = gameState.delivery.streak;
+        document.getElementById('delivery-generated-count').textContent = gameState.delivery.generatedCount;
+        
+        const generateBtn = document.getElementById('btn-generate-order');
+        if (gameState.delivery.generatedCount >= 20) {
+          generateBtn.classList.add('btn-disabled');
+          generateBtn.disabled = true;
+        } else {
+          generateBtn.classList.remove('btn-disabled');
+          generateBtn.disabled = false;
+        }
+        
+        document.getElementById('medal-5').classList.toggle('unlocked', gameState.delivery.medals[5]);
+        document.getElementById('medal-10').classList.toggle('unlocked', gameState.delivery.medals[10]);
+        document.getElementById('medal-20').classList.toggle('unlocked', gameState.delivery.medals[20]);
+        
+        this.renderOrderList();
+      },
+      
+      // 清理定时器
+      cleanup() {
+        if (this.orderTimer) clearInterval(this.orderTimer);
+      }
+    };
+    
+    // ========== 装修模块 ==========
+    const decor = {
+      // 添加家具
+      addFurniture(type, icon, price) {
+        if (gameState.coins < price) {
+          game.showToast('金币不足!');
+          return;
+        }
+        
+        gameState.coins -= price;
+        const furniture = document.createElement('div');
+        furniture.className = 'preview-furniture';
+        furniture.textContent = icon;
+        furniture.dataset.type = type;
+        furniture.style.bottom = '100px';
+        furniture.style.left = '100px';
+        
+        const previewArea = document.getElementById('preview-area');
+        previewArea.appendChild(furniture);
+        
+        game.updateUI();
+        game.showToast(`添加 ${type} 成功!`);
+        this.setupDragDrop();
+      },
+      
+      // 保存布局
+      saveLayout() {
+        game.saveGame();
+        game.showToast('布局已保存!');
+      },
+      
+      // 设置拖拽
+      setupDragDrop() {
+        const furnitureElements = document.querySelectorAll('.preview-furniture');
+        let draggedElement = null;
+        let startX, startY, initialX, initialY;
+        
+        furnitureElements.forEach(el => {
+          el.addEventListener('touchstart', (e) => {
+            draggedElement = el;
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            initialX = el.offsetLeft;
+            initialY = el.offsetTop;
+          });
+          
+          el.addEventListener('touchmove', (e) => {
+            if (!draggedElement) return;
+            e.preventDefault();
+            const dx = e.touches[0].clientX - startX;
+            const dy = e.touches[0].clientY - startY;
+            draggedElement.style.left = `${initialX + dx}px`;
+            draggedElement.style.top = `${initialY + dy}px`;
+          });
+          
+          el.addEventListener('touchend', () => {
+            draggedElement = null;
+          });
+        });
+      }
+    };
+    
+    // ========== 任务系统逻辑 ==========
+    const tasks = {
+      // 初始化任务系统
+      init() {
+        this.checkDailyReset();
+        this.checkLoginReward();
+        this.renderTaskList();
+        this.renderLoginCalendar();
+        this.updateLoginTodayReward();
+      },
+      
+      // 获取当前日期字符串 (YYYY-MM-DD)
+      getDateString(date = new Date()) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      },
+      
+      // 检查每日任务重置
+      checkDailyReset() {
+        const today = this.getDateString();
+        const lastReset = gameState.tasks.lastResetDate;
+        
+        // 如果是新的一天，重置任务
+        if (today !== lastReset) {
+          this.generateDailyTasks();
+          gameState.tasks.lastResetDate = today;
+          gameState.tasks.manualRefreshCount = 1; // 重置手动刷新次数
+          game.saveGame();
+        }
+      },
+      
+      // 生成每日任务
+      generateDailyTasks() {
+        // 随机选择 5-8 个任务
+        const taskCount = Math.floor(Math.random() * 4) + 5; // 5-8
+        const shuffled = [...TASK_TEMPLATES].sort(() => Math.random() - 0.5);
+        const selectedTemplates = shuffled.slice(0, taskCount);
+        
+        gameState.tasks.dailyTasks = selectedTemplates.map((template, index) => ({
+          ...template,
+          instanceId: `${template.id}_${index}_${Date.now()}`,
+          currentProgress: 0,
+          completed: false,
+          claimed: false
+        }));
+      },
+      
+      // 检查登录奖励
+      checkLoginReward() {
+        const today = this.getDateString();
+        const lastLogin = gameState.tasks.lastLoginDate;
+        
+        if (today !== lastLogin) {
+          // 检查是否连续登录
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayStr = this.getDateString(yesterday);
+          
+          if (lastLogin === yesterdayStr) {
+            // 连续登录
+            gameState.tasks.loginStreak = Math.min(gameState.tasks.loginStreak + 1, 7);
+          } else if (lastLogin !== today) {
+            // 不是昨天，重置连续登录
+            gameState.tasks.loginStreak = 1;
+          }
+          
+          gameState.tasks.lastLoginDate = today;
+          
+          // 显示登录奖励弹窗
+          const reward = LOGIN_REWARDS[gameState.tasks.loginStreak - 1];
+          if (reward && !gameState.tasks.loginRewards[gameState.tasks.loginStreak - 1]) {
+            setTimeout(() => {
+              this.showLoginBonus(reward);
+            }, 500);
+          }
+          
+          game.saveGame();
+        }
+      },
+      
+      // 显示登录奖励弹窗
+      showLoginBonus(reward) {
+        const overlay = document.getElementById('login-bonus-overlay');
+        const amountEl = document.getElementById('login-bonus-amount');
+        const extraEl = document.getElementById('login-bonus-extra');
+        
+        amountEl.textContent = `💰 ${reward.coins} + 💎 ${reward.diamonds}`;
+        
+        if (reward.extra) {
+          extraEl.textContent = `额外奖励：${reward.extra.name} × ${reward.count}`;
+        } else {
+          extraEl.textContent = '';
+        }
+        
+        overlay.classList.add('show');
+      },
+      
+      // 渲染任务列表
+      renderTaskList() {
+        const container = document.getElementById('daily-task-list');
+        
+        if (gameState.tasks.dailyTasks.length === 0) {
+          container.innerHTML = '<div style="text-align: center; color: var(--gray); padding: var(--spacing-lg);">暂无任务</div>';
+          return;
+        }
+        
+        container.innerHTML = gameState.tasks.dailyTasks.map(task => {
+          const progressPercent = Math.min(100, (task.currentProgress / task.target) * 100);
+          const isCompleted = task.currentProgress >= task.target;
+          const isClaimed = task.claimed;
+          
+          let statusClass = '';
+          if (isCompleted && !isClaimed) statusClass = 'completed';
+          if (isClaimed) statusClass = 'claimed';
+          
+          let rewardText = `💰 ${task.rewardCoins}`;
+          if (task.rewardDiamonds > 0) rewardText += ` + 💎 ${task.rewardDiamonds}`;
+          if (task.rewardExp > 0) rewardText += ` + ⭐ ${task.rewardExp}`;
+          
+          return `
+            <div class="task-card ${statusClass}">
+              <div class="task-header">
+                <div class="task-name">${task.name}</div>
+                <div class="task-reward">${rewardText}</div>
+              </div>
+              <div class="task-progress">
+                <div class="task-progress-bar">
+                  <div class="task-progress-fill" style="width: ${progressPercent}%"></div>
+                </div>
+                <div class="task-progress-text">${task.currentProgress} / ${task.target}</div>
+              </div>
+              <div class="task-actions">
+                <button class="btn btn-gold task-claim-btn" onclick="tasks.claimTaskReward('${task.instanceId}')" 
+                  ${!isCompleted || isClaimed ? 'disabled class="btn-disabled"' : ''}>
+                  ${isClaimed ? '已领取' : '领取奖励'}
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+        
+        // 更新手动刷新次数显示
+        document.getElementById('manual-refresh-count').textContent = gameState.tasks.manualRefreshCount;
+      },
+      
+      // 更新任务进度
+      updateTaskProgress(actionType, amount = 1) {
+        let needsUpdate = false;
+        
+        gameState.tasks.dailyTasks.forEach(task => {
+          if (task.claimed) return;
+          
+          let shouldUpdate = false;
+          
+          switch (actionType) {
+            case 'serve_customer':
+              if (task.id === 'serve_customers') shouldUpdate = true;
+              break;
+            case 'earn_coins':
+              if (task.id === 'earn_coins') shouldUpdate = true;
+              break;
+            case 'upgrade_facility':
+              if (task.id === 'upgrade_facility') shouldUpdate = true;
+              break;
+            case 'upgrade_dish':
+              if (task.id === 'upgrade_dish') shouldUpdate = true;
+              break;
+            case 'delivery_orders':
+              if (task.id === 'delivery_orders') shouldUpdate = true;
+              break;
+            case 'collect_coins':
+              if (task.id === 'collect_coins') shouldUpdate = true;
+              break;
+          }
+          
+          if (shouldUpdate && task.currentProgress < task.target) {
+            task.currentProgress += amount;
+            if (task.currentProgress > task.target) {
+              task.currentProgress = task.target;
+            }
+            needsUpdate = true;
+          }
+        });
+        
+        if (needsUpdate && restaurant.currentTab === 'tasks') {
+          this.renderTaskList();
+        }
+      },
+      
+      // 领取单个任务奖励
+      claimTaskReward(instanceId) {
+        const task = gameState.tasks.dailyTasks.find(t => t.instanceId === instanceId);
+        if (!task || task.claimed || task.currentProgress < task.target) {
+          return;
+        }
+        
+        // 发放奖励
+        gameState.coins += task.rewardCoins;
+        gameState.diamonds += (task.rewardDiamonds || 0);
+        gameState.reputation += (task.rewardExp || 0);
+        
+        task.claimed = true;
+        
+        game.updateUI();
+        this.renderTaskList();
+        game.showToast(`领取奖励：💰 ${task.rewardCoins} + 💎 ${task.rewardDiamonds || 0} + ⭐ ${task.rewardExp || 0}`);
+        game.saveGame();
+      },
+      
+      // 一键领取全部奖励
+      claimAllRewards() {
+        let totalCoins = 0;
+        let totalDiamonds = 0;
+        let totalExp = 0;
+        let claimedCount = 0;
+        
+        gameState.tasks.dailyTasks.forEach(task => {
+          if (!task.claimed && task.currentProgress >= task.target) {
+            gameState.coins += task.rewardCoins;
+            gameState.diamonds += (task.rewardDiamonds || 0);
+            gameState.reputation += (task.rewardExp || 0);
+            
+            totalCoins += task.rewardCoins;
+            totalDiamonds += (task.rewardDiamonds || 0);
+            totalExp += (task.rewardExp || 0);
+            
+            task.claimed = true;
+            claimedCount++;
+          }
+        });
+        
+        if (claimedCount === 0) {
+          game.showToast('没有可领取的奖励');
+          return;
+        }
+        
+        game.updateUI();
+        this.renderTaskList();
+        game.showToast(`领取 ${claimedCount} 个任务奖励：💰 ${totalCoins} + 💎 ${totalDiamonds} + ⭐ ${totalExp}`);
+        game.saveGame();
+      },
+      
+      // 刷新任务
+      refreshTasks() {
+        if (gameState.tasks.manualRefreshCount <= 0) {
+          game.showModal(
+            '刷新任务',
+            '手动刷新次数已用完！\n\n消耗 20 钻石刷新任务？',
+            () => {
+              if (gameState.diamonds >= 20) {
+                gameState.diamonds -= 20;
+                this.generateDailyTasks();
+                gameState.tasks.manualRefreshCount = 0;
+                game.updateUI();
+                this.renderTaskList();
+                game.showToast('任务已刷新！');
+                game.saveGame();
+              } else {
+                game.showToast('钻石不足！');
+              }
+            }
+          );
+          return;
+        }
+        
+        this.generateDailyTasks();
+        gameState.tasks.manualRefreshCount--;
+        this.renderTaskList();
+        game.showToast('任务已刷新！');
+        game.saveGame();
+      },
+      
+      // 渲染登录日历
+      renderLoginCalendar() {
+        const container = document.getElementById('login-calendar');
+        const currentDay = gameState.tasks.loginStreak;
+        
+        container.innerHTML = LOGIN_REWARDS.map((reward, index) => {
+          const dayNum = index + 1;
+          const isCurrent = dayNum === currentDay;
+          const isClaimed = gameState.tasks.loginRewards[index];
+          const isPast = dayNum < currentDay;
+          
+          let rewardIcon = '💰';
+          if (reward.diamonds > 10) rewardIcon = '💎';
+          if (reward.extra) rewardIcon = '🎁';
+          
+          let classes = 'login-day';
+          if (isCurrent) classes += ' current';
+          if (isClaimed || isPast) classes += ' claimed';
+          
+          return `
+            <div class="${classes}">
+              <div class="login-day-number">第${dayNum}天</div>
+              <div class="login-day-reward">${rewardIcon}</div>
+              <div class="login-day-amount">💰${reward.coins} 💎${reward.diamonds}</div>
+              ${isClaimed ? '<div class="login-day-claimed-mark">✓</div>' : ''}
+            </div>
+          `;
+        }).join('');
+      },
+      
+      // 更新今日奖励显示
+      updateLoginTodayReward() {
+        const currentDay = gameState.tasks.loginStreak;
+        const reward = LOGIN_REWARDS[currentDay - 1];
+        const isClaimed = gameState.tasks.loginRewards[currentDay - 1];
+        
+        const amountEl = document.getElementById('login-today-amount');
+        const btnEl = document.getElementById('btn-claim-login');
+        
+        if (reward) {
+          let text = `💰 ${reward.coins} + 💎 ${reward.diamonds}`;
+          if (reward.extra) {
+            text += ` + ${reward.extra.name}×${reward.count}`;
+          }
+          amountEl.textContent = text;
+        } else {
+          amountEl.textContent = '已完成';
+        }
+        
+        if (isClaimed) {
+          btnEl.disabled = true;
+          btnEl.classList.add('btn-disabled');
+          btnEl.innerHTML = '<span class="icon">✓</span> 已领取';
+        } else {
+          btnEl.disabled = false;
+          btnEl.classList.remove('btn-disabled');
+          btnEl.innerHTML = '<span class="icon">🎁</span> 领取今日奖励';
+        }
+      },
+      
+      // 领取登录奖励
+      claimLoginReward() {
+        const currentDay = gameState.tasks.loginStreak;
+        const reward = LOGIN_REWARDS[currentDay - 1];
+        
+        if (!reward || gameState.tasks.loginRewards[currentDay - 1]) {
+          game.showToast('无可领取的奖励');
+          return;
+        }
+        
+        // 发放奖励
+        gameState.coins += reward.coins;
+        gameState.diamonds += reward.diamonds;
+        
+        if (reward.extra) {
+          game.showToast(`获得额外奖励：${reward.extra.name} × ${reward.count}`);
+        }
+        
+        gameState.tasks.loginRewards[currentDay - 1] = true;
+        
+        game.updateUI();
+        this.renderLoginCalendar();
+        this.updateLoginTodayReward();
+        game.showToast(`领取登录奖励：💰 ${reward.coins} + 💎 ${reward.diamonds}`);
+        game.saveGame();
+      }
+    };
+    
+    // ========== 游戏主逻辑 ==========
+    const game = {
+      currentScene: 'main',
+      customerTimer: null,
+      timeTimer: null,
+      
+      init() {
+        this.updateUI();
+        this.loadSave();
+        this.startGameLoop();
+        restaurant.switchTab('manage');
+        kitchen.init();
+        delivery.init();
+        tasks.init();
+      },
+      
+      // 启动游戏循环
+      startGameLoop() {
+        this.startTimeSystem();
+        this.startCustomerGenerator();
+      },
+      
+      // 时间系统
+      startTimeSystem() {
+        this.timeTimer = setInterval(() => {
+          gameState.gameTimeMinutes += 1;
+          
+          if (gameState.gameTimeMinutes >= 1320) {
+            gameState.gameTimeMinutes = 480;
+            gameState.day++;
+            
+            gameState.delivery.todayCount = 0;
+            gameState.delivery.todayEarnings = 0;
+            gameState.delivery.generatedCount = 0;
+            
+            this.showToast('新的一天开始了！');
+          }
+          
+          this.updateTimeDisplay();
+        }, 1000);
+      },
+      
+      // 更新时间显示
+      updateTimeDisplay() {
+        const hours = Math.floor(gameState.gameTimeMinutes / 60);
+        const minutes = gameState.gameTimeMinutes % 60;
+        const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        document.getElementById('game-time').textContent = timeStr;
+        
+        const period = this.getCurrentTimePeriod();
+        document.getElementById('time-period').textContent = period.name;
+      },
+      
+      // 获取当前时段
+      getCurrentTimePeriod() {
+        const time = gameState.gameTimeMinutes;
+        if (time >= TIME_PERIODS.BREAKFAST.start && time < TIME_PERIODS.BREAKFAST.end) {
+          return TIME_PERIODS.BREAKFAST;
+        } else if (time >= TIME_PERIODS.LUNCH.start && time < TIME_PERIODS.LUNCH.end) {
+          return TIME_PERIODS.LUNCH;
+        } else if (time >= TIME_PERIODS.DINNER.start && time < TIME_PERIODS.DINNER.end) {
+          return TIME_PERIODS.DINNER;
+        } else {
+          return TIME_PERIODS.LATE;
+        }
+      },
+      
+      // 自动顾客生成器
+      startCustomerGenerator() {
+        this.scheduleNextCustomer();
+      },
+      
+      // 安排下一个顾客
+      scheduleNextCustomer() {
+        const interval = this.calculateCustomerInterval();
+        this.customerTimer = setTimeout(() => {
+          this.autoGenerateCustomer();
+          this.scheduleNextCustomer();
+        }, interval * 1000);
+      },
+      
+      // 计算顾客生成间隔
+      calculateCustomerInterval() {
+        const baseInterval = 10 / (gameState.restaurantLevel * 0.5);
+        const period = this.getCurrentTimePeriod();
+        const periodMultiplier = period.multiplier;
+        const emptyTables = Math.max(1, gameState.tableCount - gameState.customers.length);
+        const tableFactor = emptyTables / gameState.tableCount;
+        const reputationFactor = Math.min(2, gameState.reputation / 100);
+        const actualInterval = baseInterval / periodMultiplier / tableFactor / reputationFactor;
+        return Math.max(2, actualInterval);
+      },
+      
+      // 自动生成顾客
+      autoGenerateCustomer() {
+        if (gameState.customers.length >= gameState.tableCount) {
+          return;
+        }
+        
+        const customer = document.createElement('div');
+        customer.className = 'customer';
+        customer.textContent = ['🧑', '👩', '👨', '👵', '👶'][Math.floor(Math.random() * 5)];
+        customer.style.bottom = '100px';
+        customer.style.left = Math.random() * 200 + 50 + 'px';
+        customer.style.animation = 'bounce 2s infinite';
+        
+        const scene = document.getElementById('restaurant-scene');
+        scene.appendChild(customer);
+        
+        gameState.customers.push(customer);
+        gameState.servedCount++;
+        
+        // 更新任务进度
+        tasks.updateTaskProgress('serve_customer');
+        
+        this.updateUI();
+        
+        const period = this.getCurrentTimePeriod();
+        const stayTime = 3000 / period.multiplier;
+        
+        setTimeout(() => {
+          if (!customer.parentNode) return;
+          
+          const baseEarnings = Math.floor(Math.random() * 10) + 10;
+          const earnings = Math.floor(baseEarnings * period.multiplier);
+          
+          gameState.coins += earnings;
+          gameState.totalEarnings += earnings;
+          
+          gameState.reputation += 1;
+          if (gameState.reputation >= gameState.restaurantLevel * 100) {
+            gameState.restaurantLevel++;
+            gameState.reputation = 0;
+            this.showToast(`🎉 餐厅升级到 ${gameState.restaurantLevel} 级！`);
+            gameState.tableCount++;
+          }
+          
+          // 更新任务进度（赚取金币）
+          tasks.updateTaskProgress('earn_coins', earnings);
+          
+          const popup = document.createElement('div');
+          popup.className = 'earnings-popup';
+          popup.textContent = `+${earnings}💰`;
+          popup.style.bottom = '150px';
+          popup.style.left = customer.style.left;
+          scene.appendChild(popup);
+          
+          customer.remove();
+          gameState.customers = gameState.customers.filter(c => c !== customer);
+          setTimeout(() => popup.remove(), 1000);
+          
+          this.updateUI();
+        }, stayTime);
+      },
+      
+      // 场景切换
+      switchScene(sceneName) {
+        document.querySelectorAll('.scene').forEach(scene => {
+          scene.classList.remove('active');
+        });
+        
+        document.getElementById(`scene-${sceneName}`).classList.add('active');
+        
+        document.querySelectorAll('.nav-item').forEach(item => {
+          item.classList.toggle('active', item.dataset.scene === sceneName);
+        });
+        
+        this.currentScene = sceneName;
+        
+        if (sceneName === 'delivery') {
+          delivery.updateUI();
+        } else if (sceneName === 'kitchen') {
+          kitchen.renderChefList();
+          kitchen.renderDishGrid();
+          kitchen.renderFacilityGrid();
+        } else if (sceneName === 'main') {
+          // 切换到餐厅时，确保在经营 tab
+          restaurant.switchTab('manage');
+        }
+      },
+      
+      // 更新 UI
+      updateUI() {
+        document.getElementById('coins').textContent = gameState.coins;
+        document.getElementById('reputation').textContent = gameState.reputation;
+        document.getElementById('diamonds').textContent = gameState.diamonds;
+        document.getElementById('chef-count').textContent = gameState.chefs.length;
+        document.getElementById('day').textContent = `第${gameState.day}天`;
+        document.getElementById('served-count').textContent = gameState.servedCount;
+        document.getElementById('total-earnings').textContent = gameState.totalEarnings;
+        document.getElementById('restaurant-level').textContent = gameState.restaurantLevel;
+        document.getElementById('dish-count').textContent = gameState.dishes.filter(d => d.unlocked).length;
+        
+        this.updateTimeDisplay();
+      },
+      
+      // 显示提示
+      showToast(message) {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+      },
+      
+      // 显示模态框
+      showModal(title, content, onConfirm, onCancel) {
+        document.getElementById('modal-title').textContent = title;
+        document.getElementById('modal-content').textContent = content;
+        document.getElementById('modal-overlay').classList.add('show');
+        
+        const confirmBtn = document.getElementById('modal-confirm');
+        const cancelBtn = document.getElementById('modal-cancel');
+        
+        confirmBtn.onclick = () => {
+          document.getElementById('modal-overlay').classList.remove('show');
+          if (onConfirm) onConfirm();
+        };
+        
+        cancelBtn.onclick = () => {
+          document.getElementById('modal-overlay').classList.remove('show');
+          if (onCancel) onCancel();
+        };
+      },
+      
+      // 保存游戏
+      saveGame() {
+        localStorage.setItem('myChineseRestaurant_save_v03', JSON.stringify(gameState));
+      },
+      
+      // 加载存档
+      loadSave() {
+        const saved = localStorage.getItem('myChineseRestaurant_save_v03');
+        if (saved) {
+          const data = JSON.parse(saved);
+          Object.assign(gameState, data);
+          this.updateUI();
+        }
+      },
+      
+      // 清理定时器
+      cleanup() {
+        if (this.customerTimer) clearTimeout(this.customerTimer);
+        if (this.timeTimer) clearInterval(this.timeTimer);
+        delivery.cleanup();
+      }
+    };
+    
+    // 初始化游戏
+    game.init();
+    
+    // 自动保存（每 30 秒）
+    setInterval(() => game.saveGame(), 30000);
+    
+    // 页面关闭时清理定时器
+    window.addEventListener('beforeunload', () => game.cleanup());
+  </script>
+</body>
+</html>
