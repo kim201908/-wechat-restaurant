@@ -346,48 +346,67 @@ function renderBusinessRestaurant(y, height, gameData) {
   ctx.textAlign = 'left';
   ctx.fillText('🏪 餐厅装修', 16, y + 20);
   
-  // 预览区域
-  ctx.fillStyle = '#DEB887';
+  // 预览区域（可摆放家具）
+  ctx.fillStyle = '#87CEEB';
   drawRoundRect(16, y + 40, CONFIG.width - 32, 200, 8);
   ctx.fill();
-  ctx.fillStyle = CONFIG.colors.gray;
-  ctx.font = '14px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('装修预览（开发中）', CONFIG.width / 2, y + 140);
   
-  // 家具列表标题
+  // 地板
+  ctx.fillStyle = '#DEB887';
+  drawRoundRect(26, y + 120, CONFIG.width - 52, 110, 8);
+  ctx.fill();
+  
+  // 显示已购买的家具
+  if (gameData.furnitures && gameData.furnitures.length > 0) {
+    gameData.furnitures.forEach((f, index) => {
+      const x = 36 + (index % 4) * 70;
+      const fy = y + 130 + Math.floor(index / 4) * 45;
+      ctx.font = '28px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(f.icon, x, fy);
+    });
+  } else {
+    ctx.fillStyle = CONFIG.colors.gray;
+    ctx.font = '14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('点击下方家具购买摆放', CONFIG.width / 2, y + 140);
+  }
+  
+  // 家具商店标题
   ctx.fillStyle = CONFIG.colors.darkBrown;
   ctx.font = 'bold 14px sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillText('可用家具', 16, y + 260);
+  ctx.fillText('🛒 家具商店', 16, y + 260);
   
   // 家具网格
   const furnitures = [
-    { icon: '🪑', name: '餐桌', price: 500 },
-    { icon: '🪑', name: '椅子', price: 200 },
-    { icon: '🌿', name: '绿植', price: 100 },
-    { icon: '🖼️', name: '装饰画', price: 300 }
+    { icon: '🪑', name: '餐桌', price: 500, id: 'table' },
+    { icon: '🪑', name: '椅子', price: 200, id: 'chair' },
+    { icon: '🌿', name: '绿植', price: 100, id: 'plant' },
+    { icon: '🖼️', name: '装饰画', price: 300, id: 'painting' },
+    { icon: '💡', name: '吊灯', price: 800, id: 'lamp' },
+    { icon: '🪴', name: '盆栽', price: 150, id: 'pot' }
   ];
   
   furnitures.forEach((f, index) => {
     const x = 16 + (index % 3) * 110;
-    const fy = y + 290 + Math.floor(index / 3) * 90;
+    const fy = y + 290 + Math.floor(index / 3) * 75;
     
     ctx.fillStyle = '#FFFFFF';
-    drawRoundRect(x, fy, 100, 80, 8);
+    drawRoundRect(x, fy, 100, 65, 8);
     ctx.fill();
     
-    ctx.font = '32px sans-serif';
+    ctx.font = '28px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(f.icon, x + 50, fy + 35);
+    ctx.fillText(f.icon, x + 50, fy + 28);
     
     ctx.fillStyle = CONFIG.colors.darkBrown;
     ctx.font = '12px sans-serif';
-    ctx.fillText(f.name, x + 50, fy + 55);
+    ctx.fillText(f.name, x + 50, fy + 48);
     
     ctx.fillStyle = CONFIG.colors.primaryRed;
     ctx.font = 'bold 12px sans-serif';
-    ctx.fillText(`💰${f.price}`, x + 50, fy + 72);
+    ctx.fillText(`💰${f.price}`, x + 50, fy + 62);
   });
 }
 
@@ -534,6 +553,27 @@ function handleTouch(x, y, gameData, activeTab) {
       if (y >= btnY && y <= btnY + 44 && x >= 16 && x <= CONFIG.width - 16) {
         return { type: 'action', action: 'generateOrder' };
       }
+    }
+    
+    // 经营 - 餐厅：购买家具
+    if (gameData.businessSubTab === 'restaurant') {
+      const furnitures = [
+        { icon: '🪑', name: '餐桌', price: 500, id: 'table' },
+        { icon: '🪑', name: '椅子', price: 200, id: 'chair' },
+        { icon: '🌿', name: '绿植', price: 100, id: 'plant' },
+        { icon: '🖼️', name: '装饰画', price: 300, id: 'painting' },
+        { icon: '💡', name: '吊灯', price: 800, id: 'lamp' },
+        { icon: '🪴', name: '盆栽', price: 150, id: 'pot' }
+      ];
+      
+      const shopY = CONFIG.statusBarHeight + 290;
+      furnitures.forEach((f, index) => {
+        const fx = 16 + (index % 3) * 110;
+        const fy = shopY + Math.floor(index / 3) * 75;
+        if (y >= fy && y <= fy + 65 && x >= fx && x <= fx + 100) {
+          return { type: 'action', action: 'buyFurniture', furniture: f };
+        }
+      });
     }
   }
   

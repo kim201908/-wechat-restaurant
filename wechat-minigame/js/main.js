@@ -44,6 +44,9 @@ const GameGlobal = {
   // 经营子 Tab
   businessSubTab: 'restaurant',
   
+  // 家具数据
+  furnitures: [],
+  
   // 社交子 Tab
   socialSubTab: 'friends',
   
@@ -155,6 +158,7 @@ function loadGame() {
       if (saved.events) GameGlobal.events = saved.events;
       if (saved.hasFirstCharge !== undefined) GameGlobal.hasFirstCharge = saved.hasFirstCharge;
       if (saved.monthCard) GameGlobal.monthCard = saved.monthCard;
+      if (saved.furnitures) GameGlobal.furnitures = saved.furnitures;
       console.log('游戏存档加载成功');
     }
   } catch (e) {
@@ -173,7 +177,8 @@ function saveGame() {
       social: GameGlobal.social,
       events: GameGlobal.events,
       hasFirstCharge: GameGlobal.hasFirstCharge,
-      monthCard: GameGlobal.monthCard
+      monthCard: GameGlobal.monthCard,
+      furnitures: GameGlobal.furnitures
     }));
   } catch (e) {
     console.error('保存存档失败:', e);
@@ -429,6 +434,40 @@ function handleAction(action) {
           }
         }
       });
+      break;
+      
+    case 'buyFurniture':
+      const furniture = action.furniture;
+      if (GameGlobal.player.gold >= furniture.price) {
+        wx.showModal({
+          title: '购买家具',
+          content: `确认购买 ${furniture.name}（💰${furniture.price}）？`,
+          success(res) {
+            if (res.confirm) {
+              GameGlobal.player.gold -= furniture.price;
+              if (!GameGlobal.furnitures) GameGlobal.furnitures = [];
+              GameGlobal.furnitures.push({
+                id: furniture.id,
+                icon: furniture.icon,
+                name: furniture.name,
+                x: 36 + GameGlobal.furnitures.length * 70,
+                y: 130
+              });
+              wx.showToast({
+                title: '购买成功！',
+                icon: 'success'
+              });
+              saveGame();
+              render();
+            }
+          }
+        });
+      } else {
+        wx.showToast({
+          title: '金币不足',
+          icon: 'none'
+        });
+      }
       break;
     }
   } catch (e) {
