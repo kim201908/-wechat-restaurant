@@ -52,18 +52,39 @@ const GameGlobal = {
     { id: 'plants', name: '🌿 植物类', icon: '🌿' }
   ],
   
-  // 商品列表
+  // 商品列表（扩充）
   shoppingItems: [
+    // 桌椅类
     { id: 'table1', category: 'tables', name: '餐桌', icon: '🪑', price: 500 },
+    { id: 'table2', category: 'tables', name: '方桌', icon: '🪑', price: 600 },
     { id: 'chair1', category: 'tables', name: '椅子', icon: '🪑', price: 200 },
+    { id: 'chair2', category: 'tables', name: '沙发', icon: '🛋️', price: 800 },
+    { id: 'bar', category: 'tables', name: '吧台', icon: '🍸', price: 1200 },
+    // 装饰类
     { id: 'painting1', category: 'decorations', name: '装饰画', icon: '🖼️', price: 300 },
+    { id: 'mirror', category: 'decorations', name: '镜子', icon: '🪞', price: 400 },
+    { id: 'clock', category: 'decorations', name: '挂钟', icon: '🕐', price: 250 },
+    { id: 'rug', category: 'decorations', name: '地毯', icon: '🧶', price: 350 },
+    // 灯具类
     { id: 'lamp1', category: 'lights', name: '吊灯', icon: '💡', price: 800 },
+    { id: 'lamp2', category: 'lights', name: '台灯', icon: '💡', price: 300 },
+    { id: 'chandelier', category: 'lights', name: '水晶灯', icon: '✨', price: 1500 },
+    // 植物类
     { id: 'plant1', category: 'plants', name: '绿植', icon: '🌿', price: 100 },
-    { id: 'pot1', category: 'plants', name: '盆栽', icon: '🪴', price: 150 }
+    { id: 'pot1', category: 'plants', name: '盆栽', icon: '🪴', price: 150 },
+    { id: 'flowers', category: 'plants', name: '鲜花', icon: '💐', price: 200 },
+    { id: 'tree', category: 'plants', name: '大树', icon: '🌳', price: 500 }
   ],
   
   // 当前选中的采购分类
   selectedCategory: 'tables',
+  
+  // 顾客系统
+  customers: [],
+  maxCustomers: 5,
+  
+  // 顾客动画
+  customerAnimationTimer: null,
   
   // 家具数据
   furnitures: [],
@@ -584,5 +605,67 @@ window.init = init;
 window.saveGame = saveGame;
 window.switchScene = switchScene;
 
+// 启动顾客动画系统
+function startCustomerAnimation() {
+  // 每 3 秒生成一个顾客
+  setInterval(() => {
+    if (GameGlobal.customers.length < GameGlobal.maxCustomers) {
+      // 50% 概率生成顾客
+      if (Math.random() > 0.5) {
+        GameGlobal.customers.push({
+          id: Date.now(),
+          x: -30,  // 从左侧进入
+          y: 200,
+          state: 'entering',  // entering, ordering, eating, leaving
+          orderTime: 0,
+          eatTime: 0
+        });
+      }
+    }
+  }, 3000);
+  
+  // 每 100ms 更新顾客位置
+  setInterval(() => {
+    updateCustomers();
+    render();
+  }, 100);
+}
+
+// 更新顾客状态
+function updateCustomers() {
+  GameGlobal.customers.forEach(customer => {
+    switch (customer.state) {
+      case 'entering':
+        customer.x += 2;
+        if (customer.x >= 50) {
+          customer.state = 'ordering';
+          customer.orderTime = Date.now();
+        }
+        break;
+      case 'ordering':
+        if (Date.now() - customer.orderTime > 2000) {
+          customer.state = 'eating';
+          customer.eatTime = Date.now();
+        }
+        break;
+      case 'eating':
+        if (Date.now() - customer.eatTime > 3000) {
+          customer.state = 'leaving';
+        }
+        break;
+      case 'leaving':
+        customer.x += 3;
+        if (customer.x > CONFIG.width + 30) {
+          // 移除离开的顾客
+          GameGlobal.customers = GameGlobal.customers.filter(c => c.id !== customer.id);
+        }
+        break;
+    }
+  });
+}
+
 // 启动游戏
 init();
+
+// 启动顾客动画（延迟 2 秒，等 Canvas 初始化）
+setTimeout(startCustomerAnimation, 2000);

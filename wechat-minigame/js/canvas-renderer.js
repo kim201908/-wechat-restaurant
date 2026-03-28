@@ -300,10 +300,42 @@ function renderHome(y, height, gameData) {
     ctx.fillText('去商店购买家具装饰餐厅吧！', CONFIG.width / 2, y + 150);
   }
   
-  // 顾客（简单表示）
-  ctx.font = '24px sans-serif';
-  for (let i = 0; i < Math.min(gameData.chefs.length, 3); i++) {
-    ctx.fillText('👤', 50 + i * 100, y + 180);
+  // 顾客动画系统
+  if (gameData.customers && gameData.customers.length > 0) {
+    gameData.customers.forEach(customer => {
+      let emoji = '👤';
+      let status = '';
+      
+      switch (customer.state) {
+        case 'entering':
+          emoji = '🚶';  // 走进来
+          status = '...';
+          break;
+        case 'ordering':
+          emoji = '👤';  // 站立
+          status = '📝';
+          break;
+        case 'eating':
+          emoji = '😋';  // 吃东西
+          status = '🍽️';
+          break;
+        case 'leaving':
+          emoji = '🚶';  // 离开
+          status = '👋';
+          break;
+      }
+      
+      // 绘制顾客
+      ctx.font = '32px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(emoji, customer.x, y + customer.y);
+      
+      // 绘制状态
+      if (status) {
+        ctx.font = '16px sans-serif';
+        ctx.fillText(status, customer.x + 15, y + customer.y - 15);
+      }
+    });
   }
   
   // 统计卡片
