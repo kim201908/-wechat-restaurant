@@ -26,10 +26,31 @@ const GameGlobal = {
     period: 'morning'
   },
   
-  // 厨师数据
-  chefs: [
-    { id: 1, name: '小王', level: 1, speed: 10, cuisine: '川菜' }
-  ],
+  // 员工系统
+  employees: {
+    chefs: [     // 厨师
+      { id: 1, name: '小王', level: 1, speed: 10, cuisine: '川菜', salary: 100 }
+    ],
+    waiters: [],  // 服务员
+    cashiers: [   // 收银员
+      { id: 1, name: '小李', level: 1, speed: 10, salary: 80 }
+    ]
+  },
+  
+  // 成本系统
+  costs: {
+    ingredientRate: 0.3,  // 食材成本占售价 30%
+    lastPayTime: Date.now(),
+    todayWages: 0,
+    todayIngredientCost: 0
+  },
+  
+  // 利润统计
+  profit: {
+    todayRevenue: 0,
+    todayCost: 0,
+    todayProfit: 0
+  },
   
   // 菜品数据
   dishes: [
@@ -593,6 +614,43 @@ function handleAction(action) {
       GameGlobal.selectedCategory = action.categoryId;
       render();
       break;
+      
+    case 'selectEmpTab':
+      GameGlobal.selectedEmpTab = action.empTab;
+      render();
+      break;
+      
+    case 'recruitEmployee':
+      const empType = action.empType;
+      if (GameGlobal.player.gold >= 500) {
+        GameGlobal.player.gold -= 500;
+        const empId = (GameGlobal.employees[empType]?.length || 0) + 1;
+        const names = { chefs: ['小王', '老张', '阿强'], waiters: ['小红', '小丽', '阿芳'], cashiers: ['小李', '小陈', '阿明'] };
+        const nameList = names[empType] || ['员工'];
+        const newEmp = {
+          id: empId,
+          name: nameList[Math.floor(Math.random() * nameList.length)],
+          level: 1,
+          speed: 10,
+          salary: empType === 'chefs' ? 100 : empType === 'waiters' ? 80 : 80
+        };
+        
+        if (!GameGlobal.employees[empType]) GameGlobal.employees[empType] = [];
+        GameGlobal.employees[empType].push(newEmp);
+        
+        wx.showToast({
+          title: `雇佣${empType === 'chefs' ? '厨师' : empType === 'waiters' ? '服务员' : '收银员'}成功！`,
+          icon: 'success'
+        });
+        saveGame();
+        render();
+      } else {
+        wx.showToast({
+          title: '金币不足',
+          icon: 'none'
+        });
+      }
+      break;
     }
   } catch (e) {
     console.error('[动作处理] 错误:', e.message);
@@ -718,10 +776,20 @@ function updateCustomers() {
         
       case 'paying':
         if (Date.now() - customer.payTime > 1000) {
-          // 付款完成，增加收入
+          // 付款完成，计算收入和成本
           const bill = Math.floor(Math.random() * 30) + 20;  // 20-50 元
+          const ingredientCost = Math.floor(bill * GameGlobal.costs.ingredientRate);  // 食材成本
+          const profit = bill - ingredientCost;
+          
           GameGlobal.todayEarnings += bill;
-          GameGlobal.player.gold += bill;
+          GameGlobal.player.gold += profit;
+          
+          // 更新统计
+          GameGlobal.profit.todayRevenue += bill;
+          GameGlobal.costs.todayIngredientCost += ingredientCost;
+          GameGlobal.profit.todayCost = GameGlobal.costs.todayIngredientCost + GameGlobal.costs.todayWages;
+          GameGlobal.profit.todayProfit = GameGlobal.profit.todayRevenue - GameGlobal.profit.todayCost;
+          
           customer.state = 'walking_out_final';
         }
         break;
@@ -742,3 +810,19 @@ init();
 
 // 启动顾客动画（延迟 2 秒，等 Canvas 初始化）
 setTimeout(startCustomerAnimation, 2000);
+
+// 启动工资支付系统（每小时支付一次）
+setInterval(() => {
+  const totalWages = 
+    GameGlobal.employees.chefs.reduce((sum, e) => sum + e.salary, 0) +
+    GameGlobal.employees.waiters.reduce((sum, e) => sum + e.salary, 0) +
+    GameGlobal.employees.cashiers.reduce((sum, e) => sum + e.salary, 0);
+  
+  if (totalWages > 0) {
+    GameGlobal.costs.todayWages += totalWages;
+    GameGlobal.profit.todayCost = GameGlobal.costs.todayIngredientCost + GameGlobal.costs.todayWages;
+    GameGlobal.profit.todayProfit = GameGlobal.profit.todayRevenue - GameGlobal.profit.todayCost;
+    
+    console.log(`[工资] 支付工资 💰${totalWages}，今日总工资：${GameGlobal.costs.todayWages}`);
+  }
+}, 3600000);  // 1 小时 = 3600 秒（测试时可改为 60000 = 1 分钟）

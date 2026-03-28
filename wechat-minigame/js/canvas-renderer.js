@@ -483,37 +483,77 @@ function renderBusinessRestaurant(y, height, gameData) {
   ctx.fillText('👉 去采购 Tab 购买更多家具', CONFIG.width / 2, y + 360);
 }
 
-// 渲染经营 - 厨房
+// 渲染经营 - 厨房（员工管理）
 function renderBusinessKitchen(y, height, gameData) {
-  // 厨师列表
-  ctx.fillStyle = CONFIG.colors.darkBrown;
-  ctx.font = 'bold 16px sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText('👨‍🍳 厨师管理', 16, y + 20);
+  // 员工分类 Tab
+  const empTabs = [
+    { key: 'chefs', label: '👨‍🍳 厨师' },
+    { key: 'waiters', label: '👩‍🍳 服务员' },
+    { key: 'cashiers', label: '🧾 收银员' }
+  ];
+  const empTabY = y + 20;
+  const empTabWidth = (CONFIG.width - 48) / 3;
   
-  gameData.chefs.forEach((chef, index) => {
-    const fy = y + 50 + index * 70;
+  empTabs.forEach((tab, index) => {
+    const x = 16 + index * empTabWidth;
+    const isActive = gameData.selectedEmpTab === tab.key || (!gameData.selectedEmpTab && tab.key === 'chefs');
     
-    ctx.fillStyle = '#FFFFFF';
-    drawRoundRect(16, fy, CONFIG.width - 32, 60, 8);
+    ctx.fillStyle = isActive ? CONFIG.colors.primaryRed : '#E0E0E0';
+    drawRoundRect(x, empTabY, empTabWidth - 4, 32, 8);
     ctx.fill();
     
-    ctx.font = '32px sans-serif';
+    ctx.fillStyle = isActive ? '#FFFFFF' : CONFIG.colors.gray;
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(tab.label, x + empTabWidth / 2, empTabY + 16);
+  });
+  
+  const selectedTab = gameData.selectedEmpTab || 'chefs';
+  const employees = gameData.employees?.[selectedTab] || [];
+  
+  // 员工列表
+  const listY = y + 65;
+  ctx.fillStyle = CONFIG.colors.darkBrown;
+  ctx.font = 'bold 14px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(empTabs.find(t => t.key === selectedTab)?.label || '员工', 16, listY);
+  
+  employees.forEach((emp, index) => {
+    const fy = listY + 10 + index * 60;
+    
+    ctx.fillStyle = '#FFFFFF';
+    drawRoundRect(16, fy, CONFIG.width - 32, 50, 8);
+    ctx.fill();
+    
+    ctx.font = '28px sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('👨‍🍳', 26, fy + 38);
+    ctx.fillText(selectedTab === 'chefs' ? '👨‍🍳' : selectedTab === 'waiters' ? '👩‍🍳' : '🧾', 26, fy + 32);
     
     ctx.fillStyle = CONFIG.colors.darkBrown;
-    ctx.font = 'bold 14px sans-serif';
-    ctx.fillText(`${chef.name} Lv.${chef.level}`, 70, fy + 28);
+    ctx.font = 'bold 12px sans-serif';
+    ctx.fillText(`${emp.name} Lv.${emp.level}`, 65, fy + 25);
     
     ctx.fillStyle = CONFIG.colors.gray;
-    ctx.font = '12px sans-serif';
-    ctx.fillText(`速度：${chef.speed}`, 70, fy + 48);
+    ctx.font = '11px sans-serif';
+    ctx.fillText(`工资：💰${emp.salary}/h`, 65, fy + 42);
   });
   
   // 雇佣按钮
-  const btnY = y + 50 + gameData.chefs.length * 70 + 20;
-  drawButton('📢 雇佣新厨师 (💰500)', 16, btnY, CONFIG.width - 32, 44, 'primary');
+  const btnY = listY + 10 + employees.length * 60 + 10;
+  const jobTitle = selectedTab === 'chefs' ? '厨师' : selectedTab === 'waiters' ? '服务员' : '收银员';
+  drawButton(`📢 雇佣${jobTitle} (💰500)`, 16, btnY, CONFIG.width - 32, 40, 'primary');
+  
+  // 成本统计
+  const statsY = btnY + 55;
+  ctx.fillStyle = CONFIG.colors.darkBrown;
+  ctx.font = 'bold 14px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('📊 今日成本', 16, statsY);
+  
+  drawStatCard(16, statsY + 10, 100, 50, `💰${gameData.costs?.todayIngredientCost || 0}`, '食材成本');
+  drawStatCard(126, statsY + 10, 100, 50, `💰${gameData.costs?.todayWages || 0}`, '员工工资');
+  drawStatCard(236, statsY + 10, 100, 50, `💰${gameData.profit?.todayProfit || 0}`, '净利润');
   
   // 菜品管理
   const dishesY = btnY + 60;
@@ -665,20 +705,34 @@ function handleTouch(x, y, gameData, activeTab) {
       }
     }
     
-    // 经营 - 厨房：雇佣厨师按钮
+    // 经营 - 厨房：员工管理
     if (gameData.businessSubTab === 'kitchen') {
-      const btnY = CONFIG.statusBarHeight + 50 + gameData.chefs.length * 70 + 20;
-      if (y >= btnY && y <= btnY + 44 && x >= 16 && x <= CONFIG.width - 16) {
-        return { type: 'action', action: 'recruitChef' };
+      const subNavY = CONFIG.statusBarHeight + 60;
+      
+      // 员工分类 Tab 点击
+      const empTabs = ['chefs', 'waiters', 'cashiers'];
+      const empTabWidth = (CONFIG.width - 48) / 3;
+      
+      if (y >= subNavY && y <= subNavY + 32) {
+        for (let i = 0; i < 3; i++) {
+          const x = 16 + i * empTabWidth;
+          if (x >= 16 && x <= CONFIG.width - 16) {
+            const tabIndex = Math.floor((x - 16) / empTabWidth);
+            if (tabIndex >= 0 && tabIndex < 3) {
+              return { type: 'action', action: 'selectEmpTab', empTab: empTabs[tabIndex] };
+            }
+          }
+        }
       }
       
-      // 菜品点击（升级）
-      gameData.dishes.forEach((dish, index) => {
-        const dishY = CONFIG.statusBarHeight + 50 + 60 + 30 + index * 70;
-        if (y >= dishY && y <= dishY + 60 && x >= 16 && x <= CONFIG.width - 16 && dish.unlocked) {
-          return { type: 'action', action: 'upgradeDish', dishId: dish.id };
-        }
-      });
+      // 雇佣员工按钮
+      const selectedTab = gameData.selectedEmpTab || 'chefs';
+      const employees = gameData.employees?.[selectedTab] || [];
+      const btnY = CONFIG.statusBarHeight + 75 + employees.length * 60 + 10;
+      
+      if (y >= btnY && y <= btnY + 40 && x >= 16 && x <= CONFIG.width - 16) {
+        return { type: 'action', action: 'recruitEmployee', empType: selectedTab };
+      }
     }
     
     // 经营 - 外卖：生成订单按钮
