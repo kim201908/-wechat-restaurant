@@ -604,22 +604,17 @@ function handleTouch(x, y, gameData, activeTab) {
         { icon: '🪴', name: '盆栽', price: 150, id: 'pot' }
       ];
       
-      console.log(`[家具购买] 点击 Y=${y}, X=${x}`);
-      
-      // 根据实际渲染位置调整检测范围
+      // 根据日志，点击 Y=584-605，说明实际渲染位置在 550-650 左右
+      // 第一排 Y 约 550-625，第二排 Y 约 625-700
       furnitures.forEach((f, index) => {
         const fx = 16 + (index % 3) * 110;
-        const fy = 334 + Math.floor(index / 3) * 75;
+        // 根据实际点击调整：第一排 550，第二排 625
+        const fy = 550 + Math.floor(index / 3) * 75;
         
-        console.log(`[家具${index}] ${f.name} 位置：(${fx},${fy}), 点击：(${x},${y}), 范围：Y${fy}-${fy+65}`);
-        
-        if (y >= fy && y <= fy + 65 && x >= fx && x <= fx + 100) {
-          console.log(`[家具购买] ✅ 点击到 ${f.name}`);
+        if (y >= fy && y <= fy + 75 && x >= fx && x <= fx + 100) {
           return { type: 'action', action: 'buyFurniture', furniture: f };
         }
       });
-      
-      console.log('[家具购买] ❌ 未点击到任何家具');
     }
   }
   
