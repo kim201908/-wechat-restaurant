@@ -522,14 +522,29 @@ function handleTouch(x, y, gameData, activeTab) {
   // 经营 Tab 子导航检测
   if (activeTab === 'business') {
     const subNavY = CONFIG.statusBarHeight + 40;
-    if (y >= subNavY && y <= subNavY + 36) {
+    const subNavHeight = 36;
+    
+    // 调试：输出子导航区域
+    // console.log(`[子导航] Y 范围：${subNavY} - ${subNavY + subNavHeight}, 点击 Y: ${y}`);
+    
+    if (y >= subNavY && y <= subNavY + subNavHeight) {
+      // 确保 x 在有效范围内
+      if (x < 16 || x > CONFIG.width - 16) {
+        return null;
+      }
+      
       const subTabWidth = (CONFIG.width - 32) / 3;
       const subTabIndex = Math.floor((x - 16) / subTabWidth);
       const subTabs = ['restaurant', 'kitchen', 'delivery'];
+      
+      // 调试：输出计算结果
+      // console.log(`[子导航] X:${x}, subTabIndex:${subTabIndex}, subTabWidth:${subTabWidth.toFixed(1)}`);
+      
       if (subTabIndex >= 0 && subTabIndex < 3) {
         return { type: 'subtab', subtab: subTabs[subTabIndex], tabGroup: 'business' };
       }
     }
+  }
     
     // 经营 - 厨房：雇佣厨师按钮
     if (gameData.businessSubTab === 'kitchen') {
@@ -580,14 +595,22 @@ function handleTouch(x, y, gameData, activeTab) {
   // 社交 Tab 子导航检测
   if (activeTab === 'social') {
     const subNavY = CONFIG.statusBarHeight + 40;
-    if (y >= subNavY && y <= subNavY + 36) {
+    const subNavHeight = 36;
+    
+    if (y >= subNavY && y <= subNavY + subNavHeight) {
+      if (x < 16 || x > CONFIG.width - 16) {
+        return null;
+      }
+      
       const subTabWidth = (CONFIG.width - 32) / 3;
       const subTabIndex = Math.floor((x - 16) / subTabWidth);
       const subTabs = ['friends', 'rankings', 'events'];
+      
       if (subTabIndex >= 0 && subTabIndex < 3) {
         return { type: 'subtab', subtab: subTabs[subTabIndex], tabGroup: 'social' };
       }
     }
+  }
     
     // 好友页：复制好友码按钮
     if (gameData.socialSubTab === 'friends') {
@@ -601,14 +624,22 @@ function handleTouch(x, y, gameData, activeTab) {
   // 商城 Tab 子导航检测
   if (activeTab === 'mall') {
     const subNavY = CONFIG.statusBarHeight + 40;
-    if (y >= subNavY && y <= subNavY + 36) {
+    const subNavHeight = 36;
+    
+    if (y >= subNavY && y <= subNavY + subNavHeight) {
+      if (x < 16 || x > CONFIG.width - 16) {
+        return null;
+      }
+      
       const subTabWidth = (CONFIG.width - 32) / 3;
       const subTabIndex = Math.floor((x - 16) / subTabWidth);
       const subTabs = ['recommend', 'items', 'decorations'];
+      
       if (subTabIndex >= 0 && subTabIndex < 3) {
         return { type: 'subtab', subtab: subTabs[subTabIndex], tabGroup: 'mall' };
       }
     }
+  }
     
     // 推荐页：首充礼包购买
     if (gameData.mallSubTab === 'recommend' && !gameData.hasFirstCharge) {

@@ -251,7 +251,7 @@ function endOfDay() {
   });
 }
 
-// 绑定触摸事件（带错误处理）
+// 绑定触摸事件（带错误处理和调试）
 function bindTouchEvents() {
   if (typeof wx.onTouchStart !== 'function') {
     console.warn('[触摸事件] wx.onTouchStart 不可用，使用降级方案');
@@ -261,12 +261,18 @@ function bindTouchEvents() {
   wx.onTouchStart((res) => {
     try {
       const touch = res.touches[0];
+      // 使用 clientX/clientY，微信小游戏会自动处理 DPI
       const x = touch.clientX;
       const y = touch.clientY;
+      
+      // 调试日志：输出触摸坐标
+      console.log(`[触摸] (${x.toFixed(1)}, ${y.toFixed(1)}) Tab:${GameGlobal.activeTab}`);
       
       const action = CanvasRenderer.handleTouch(x, y, GameGlobal, GameGlobal.activeTab);
       
       if (action) {
+        console.log('[触摸] 检测到动作:', action.type, action.action || action.tab || action.subtab);
+        
         if (action.type === 'tab') {
           GameGlobal.activeTab = action.tab;
           render();
@@ -282,6 +288,8 @@ function bindTouchEvents() {
         } else if (action.type === 'action') {
           handleAction(action);
         }
+      } else {
+        console.log('[触摸] 未检测到有效动作');
       }
     } catch (e) {
       console.error('[触摸事件] 处理错误:', e.message);
