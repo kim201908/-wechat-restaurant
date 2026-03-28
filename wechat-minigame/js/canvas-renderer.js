@@ -26,6 +26,9 @@ const CONFIG = {
 // Canvas 上下文
 let ctx = null;
 
+// 导出 ctx 供其他模块使用
+window.CanvasRendererCtx = () => ctx;
+
 // 初始化 Canvas
 function initCanvas() {
   const canvas = wx.createCanvas();
@@ -475,14 +478,14 @@ function renderBusinessDelivery(y, height, gameData) {
 // 渲染社交页 - 转发到 social-mall.js
 function renderSocial(y, height, gameData) {
   if (window.SocialMallRenderer) {
-    window.SocialMallRenderer.renderSocial(y, height, gameData);
+    window.SocialMallRenderer.renderSocialWithContext(y, height, gameData, ctx);
   }
 }
 
 // 渲染商城页 - 转发到 social-mall.js
 function renderMall(y, height, gameData) {
   if (window.SocialMallRenderer) {
-    window.SocialMallRenderer.renderMall(y, height, gameData);
+    window.SocialMallRenderer.renderMallWithContext(y, height, gameData, ctx);
   }
 }
 
