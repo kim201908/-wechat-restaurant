@@ -699,11 +699,11 @@ function startCustomerAnimation() {
     }
   }, 3000);
   
-  // 每 50ms 更新顾客位置（更流畅）
+  // 每 100ms 更新顾客位置
   setInterval(() => {
     updateCustomers();
     render();
-  }, 50);
+  }, 100);
 }
 
 // 检测家具障碍物
