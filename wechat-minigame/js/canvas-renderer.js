@@ -249,10 +249,7 @@ function render(gameData, activeTab) {
   // 绘制底部导航
   drawNavBar(activeTab);
   
-  // 提交绘制
-  wx.canvasToTempFilePath({
-    canvas: wx.createCanvas()
-  });
+  // 微信小游戏会自动渲染 Canvas，无需额外调用
 }
 
 // 渲染首页
