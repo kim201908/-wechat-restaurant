@@ -615,17 +615,21 @@ function handleTouch(x, y, gameData, activeTab) {
     }
   }
   
-  // 社交 Tab 子导航检测（根据实际点击调整）
+  // 社交 Tab 子导航检测
   if (activeTab === 'social') {
-    // 根据日志 Y=90-97 能点中，Y=127+ 点不中，说明按钮在 95-130 左右
+    console.log(`[社交子导航] 检测：Y=${y}, X=${x}, 范围 90-140`);
     if (y >= 90 && y <= 140 && x >= 16 && x <= CONFIG.width - 16) {
       const subTabWidth = (CONFIG.width - 32) / 3;
       const subTabIndex = Math.floor((x - 16) / subTabWidth);
       const subTabs = ['friends', 'rankings', 'events'];
       
+      console.log(`[社交子导航] ✅ 索引:${subTabIndex}, 结果:${subTabs[subTabIndex]}`);
+      
       if (subTabIndex >= 0 && subTabIndex < 3) {
         return { type: 'subtab', subtab: subTabs[subTabIndex], tabGroup: 'social' };
       }
+    } else {
+      console.log('[社交子导航] ❌ 不在范围内');
     }
     
     // 好友页：复制好友码按钮（严格边界）
@@ -638,17 +642,21 @@ function handleTouch(x, y, gameData, activeTab) {
     }
   }
   
-  // 商城 Tab 子导航检测（根据实际点击调整）
+  // 商城 Tab 子导航检测
   if (activeTab === 'mall') {
-    // 根据日志 Y=90-97 能点中，Y=127+ 点不中，说明按钮在 95-130 左右
+    console.log(`[商城子导航] 检测：Y=${y}, X=${x}, 范围 90-140`);
     if (y >= 90 && y <= 140 && x >= 16 && x <= CONFIG.width - 16) {
       const subTabWidth = (CONFIG.width - 32) / 3;
       const subTabIndex = Math.floor((x - 16) / subTabWidth);
       const subTabs = ['recommend', 'items', 'decorations'];
       
+      console.log(`[商城子导航] ✅ 索引:${subTabIndex}, 结果:${subTabs[subTabIndex]}`);
+      
       if (subTabIndex >= 0 && subTabIndex < 3) {
         return { type: 'subtab', subtab: subTabs[subTabIndex], tabGroup: 'mall' };
       }
+    } else {
+      console.log('[商城子导航] ❌ 不在范围内');
     }
     
     // 推荐页：首充礼包购买
