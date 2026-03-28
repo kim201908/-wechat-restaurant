@@ -112,6 +112,21 @@ function drawNavBar(activeTab) {
   });
 }
 
+// 绘制圆角矩形（微信小游戏兼容）
+function drawRoundRect(x, y, width, height, radius) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.arc(x + width - radius, y + radius, radius, Math.PI * 1.5, Math.PI * 2, false);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.arc(x + width - radius, y + height - radius, radius, 0, Math.PI * 0.5, false);
+  ctx.lineTo(x + radius, y + height);
+  ctx.arc(x + radius, y + height - radius, radius, Math.PI * 0.5, Math.PI, false);
+  ctx.lineTo(x, y + radius);
+  ctx.arc(x + radius, y + radius, radius, Math.PI, Math.PI * 1.5, false);
+  ctx.closePath();
+}
+
 // 绘制按钮
 function drawButton(text, x, y, width, height, type = 'primary') {
   const colors = {
@@ -130,8 +145,7 @@ function drawButton(text, x, y, width, height, type = 'primary') {
   gradient.addColorStop(1, darkenColor(color.bg, 20));
   
   ctx.fillStyle = gradient;
-  ctx.beginPath();
-  ctx.roundRect(x, y, width, height, 8);
+  drawRoundRect(x, y, width, height, 8);
   ctx.fill();
   
   // 按钮文字
@@ -152,8 +166,7 @@ function darkenColor(color, percent) {
 function drawCard(x, y, width, height, title, content) {
   // 卡片背景
   ctx.fillStyle = '#FFFFFF';
-  ctx.beginPath();
-  ctx.roundRect(x, y, width, height, 8);
+  drawRoundRect(x, y, width, height, 8);
   ctx.fill();
   
   // 阴影
@@ -185,8 +198,7 @@ function drawCard(x, y, width, height, title, content) {
 function drawStatCard(x, y, width, height, value, label) {
   // 卡片背景
   ctx.fillStyle = '#FFFFFF';
-  ctx.beginPath();
-  ctx.roundRect(x, y, width, height, 8);
+  drawRoundRect(x, y, width, height, 8);
   ctx.fill();
   
   // 数值
