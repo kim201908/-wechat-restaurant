@@ -722,14 +722,22 @@ function handleTouch(x, y, gameData, activeTab) {
 
 // 检查是否点击了家具（用于拖拽）
 function checkFurnitureDrag(x, y, gameData) {
-  if (!gameData.furnitures || gameData.furnitures.length === 0) return null;
+  if (!gameData.furnitures || gameData.furnitures.length === 0) {
+    console.log('[拖拽检测] 没有家具');
+    return null;
+  }
   
   // 预览区域的 Y 范围
   const previewY = CONFIG.statusBarHeight + 40;
   const previewHeight = 200;
   
+  console.log(`[拖拽检测] 点击 (${x.toFixed(1)}, ${y.toFixed(1)}), 预览区域 Y: ${previewY}-${previewY + previewHeight}`);
+  
   // 检查 Y 是否在预览区域内
-  if (y < previewY || y > previewY + previewHeight) return null;
+  if (y < previewY || y > previewY + previewHeight) {
+    console.log('[拖拽检测] Y 不在预览区域');
+    return null;
+  }
   
   // 检查每个家具
   for (let i = 0; i < gameData.furnitures.length; i++) {
@@ -738,8 +746,11 @@ function checkFurnitureDrag(x, y, gameData) {
     const fy = f.y !== undefined ? f.y : Math.floor(i / 4) * 45;
     const furnitureY = previewY + 130 + fy;
     
+    console.log(`[拖拽检测] 家具${i}: ${f.icon} 位置 (${fx}, ${furnitureY})`);
+    
     // 检查是否点击在家具范围内（40x40 的区域）
     if (x >= fx - 20 && x <= fx + 20 && y >= furnitureY - 20 && y <= furnitureY + 20) {
+      console.log(`[拖拽检测] ✅ 点击到家具${i}`);
       return {
         isDragging: true,
         dragIndex: i,
@@ -749,6 +760,7 @@ function checkFurnitureDrag(x, y, gameData) {
     }
   }
   
+  console.log('[拖拽检测] ❌ 未点击到任何家具');
   return null;
 }
 

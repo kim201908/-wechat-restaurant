@@ -278,11 +278,14 @@ function bindTouchEvents() {
       
       // 检查是否在拖拽家具（经营 - 餐厅 Tab）
       if (GameGlobal.activeTab === 'business' && GameGlobal.businessSubTab === 'restaurant') {
+        console.log(`[拖拽检测] 家具数量：${GameGlobal.furnitures?.length || 0}`);
         const dragResult = CanvasRenderer.checkFurnitureDrag(x, y, GameGlobal);
         if (dragResult) {
           GameGlobal.dragState = dragResult;
-          console.log('[触摸开始] 开始拖拽家具');
+          console.log('[拖拽检测] ✅ 开始拖拽家具', dragResult);
           return;
+        } else {
+          console.log('[拖拽检测] ❌ 未点击到家具');
         }
       }
       
