@@ -499,6 +499,30 @@ function handleTouch(x, y, gameData, activeTab) {
         return { type: 'subtab', subtab: subTabs[subTabIndex], tabGroup: 'business' };
       }
     }
+    
+    // 经营 - 厨房：雇佣厨师按钮
+    if (gameData.businessSubTab === 'kitchen') {
+      const btnY = CONFIG.statusBarHeight + 50 + gameData.chefs.length * 70 + 20;
+      if (y >= btnY && y <= btnY + 44 && x >= 16 && x <= CONFIG.width - 16) {
+        return { type: 'action', action: 'recruitChef' };
+      }
+      
+      // 菜品点击（升级）
+      gameData.dishes.forEach((dish, index) => {
+        const dishY = CONFIG.statusBarHeight + 50 + 60 + 30 + index * 70;
+        if (y >= dishY && y <= dishY + 60 && x >= 16 && x <= CONFIG.width - 16 && dish.unlocked) {
+          return { type: 'action', action: 'upgradeDish', dishId: dish.id };
+        }
+      });
+    }
+    
+    // 经营 - 外卖：生成订单按钮
+    if (gameData.businessSubTab === 'delivery') {
+      const btnY = CONFIG.statusBarHeight + 130;
+      if (y >= btnY && y <= btnY + 44 && x >= 16 && x <= CONFIG.width - 16) {
+        return { type: 'action', action: 'generateOrder' };
+      }
+    }
   }
   
   // 社交 Tab 子导航检测
@@ -562,31 +586,6 @@ function handleTouch(x, y, gameData, activeTab) {
           const prices = [6, 30, 98, 248];
           return { type: 'action', action: 'buyDiamonds', amount: amounts[i], price: prices[i] };
         }
-      }
-    }
-  }
-    
-    // 经营 - 厨房：雇佣厨师按钮
-    if (gameData.businessSubTab === 'kitchen') {
-      const btnY = CONFIG.statusBarHeight + 50 + gameData.chefs.length * 70 + 20;
-      if (y >= btnY && y <= btnY + 44 && x >= 16 && x <= CONFIG.width - 16) {
-        return { type: 'action', action: 'recruitChef' };
-      }
-      
-      // 菜品点击（升级）
-      gameData.dishes.forEach((dish, index) => {
-        const dishY = CONFIG.statusBarHeight + 50 + 60 + 30 + index * 70;
-        if (y >= dishY && y <= dishY + 60 && x >= 16 && x <= CONFIG.width - 16 && dish.unlocked) {
-          return { type: 'action', action: 'upgradeDish', dishId: dish.id };
-        }
-      });
-    }
-    
-    // 经营 - 外卖：生成订单按钮
-    if (gameData.businessSubTab === 'delivery') {
-      const btnY = CONFIG.statusBarHeight + 130;
-      if (y >= btnY && y <= btnY + 44 && x >= 16 && x <= CONFIG.width - 16) {
-        return { type: 'action', action: 'generateOrder' };
       }
     }
   }
