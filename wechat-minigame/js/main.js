@@ -333,9 +333,9 @@ function bindTouchEvents() {
       // 更新家具位置（使用绝对坐标）
       const furniture = GameGlobal.furnitures[GameGlobal.dragState.dragIndex];
       if (furniture) {
-        // 限制在预览区域内（X: 16-359, Y: 40-240）
+        // 限制在预览区域内（X: 16-359, Y: 40-340）- 扩大范围
         furniture.x = Math.max(16, Math.min(359, x - GameGlobal.dragState.offsetX));
-        furniture.y = Math.max(0, Math.min(160, y - GameGlobal.dragState.offsetY));
+        furniture.y = Math.max(0, Math.min(260, y - GameGlobal.dragState.offsetY));
         render();
       }
     } catch (e) {

@@ -368,14 +368,14 @@ function renderBusinessRestaurant(y, height, gameData) {
   ctx.textAlign = 'left';
   ctx.fillText('🏪 餐厅装修', 16, y + 20);
   
-  // 预览区域（可摆放家具）
+  // 预览区域（可摆放家具）- 扩大区域
   ctx.fillStyle = '#87CEEB';
-  drawRoundRect(16, y + 40, CONFIG.width - 32, 200, 8);
+  drawRoundRect(16, y + 40, CONFIG.width - 32, 300, 8);
   ctx.fill();
   
-  // 地板
+  // 地板（也扩大）
   ctx.fillStyle = '#DEB887';
-  drawRoundRect(26, y + 120, CONFIG.width - 52, 110, 8);
+  drawRoundRect(26, y + 120, CONFIG.width - 52, 200, 8);
   ctx.fill();
   
   // 显示已购买的家具（可拖拽）- 在预览区域内
@@ -408,11 +408,11 @@ function renderBusinessRestaurant(y, height, gameData) {
     ctx.fillText('点击下方家具购买摆放', CONFIG.width / 2, y + 140);
   }
   
-  // 家具商店标题
+  // 家具商店标题（下移，给预览区留空间）
   ctx.fillStyle = CONFIG.colors.darkBrown;
   ctx.font = 'bold 14px sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillText('🛒 家具商店', 16, y + 260);
+  ctx.fillText('🛒 家具商店', 16, y + 360);
   
   // 家具网格
   const furnitures = [
@@ -426,7 +426,7 @@ function renderBusinessRestaurant(y, height, gameData) {
   
   furnitures.forEach((f, index) => {
     const x = 16 + (index % 3) * 110;
-    const fy = y + 290 + Math.floor(index / 3) * 75;
+    const fy = y + 390 + Math.floor(index / 3) * 75;
     
     ctx.fillStyle = '#FFFFFF';
     drawRoundRect(x, fy, 100, 65, 8);
@@ -605,15 +605,13 @@ function handleTouch(x, y, gameData, activeTab) {
         { icon: '🪴', name: '盆栽', price: 150, id: 'pot' }
       ];
       
-      // 根据日志：第一排 Y=571，第二排 Y=678-692
-      // 第一排：550-625，第二排：625-750
+      // 根据新布局调整：第一排 Y=390-465，第二排 Y=465-540
       for (let i = 0; i < furnitures.length; i++) {
         const f = furnitures[i];
         const fx = 16 + (i % 3) * 110;
-        const fy = 520 + Math.floor(i / 3) * 100;
+        const fy = 390 + Math.floor(i / 3) * 75;
         
-        // 放宽检测范围
-        if (y >= fy && y <= fy + 100 && x >= fx && x <= fx + 100) {
+        if (y >= fy && y <= fy + 75 && x >= fx && x <= fx + 100) {
           return { type: 'action', action: 'buyFurniture', furniture: f };
         }
       }
@@ -716,10 +714,6 @@ function checkFurnitureDrag(x, y, gameData) {
   if (!gameData.furnitures || gameData.furnitures.length === 0) {
     return null;
   }
-  
-  // 预览区域的 Y 范围（根据实际渲染位置调整）
-  const previewY = 40;  // 相对于 contentY
-  const previewHeight = 200;
   
   // 检查每个家具（使用绝对坐标）
   for (let i = 0; i < gameData.furnitures.length; i++) {
