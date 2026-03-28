@@ -545,14 +545,23 @@ function renderMall(y, height, gameData) {
 
 // 触摸事件处理
 function handleTouch(x, y, gameData, activeTab) {
-  // 检测底部导航点击
+  // 检测底部导航点击（添加上下边界检查）
   const navY = CONFIG.height - CONFIG.navBarHeight;
-  if (y >= navY) {
+  const navHeight = CONFIG.navBarHeight;
+  
+  // 只在底部导航区域内才触发
+  if (y >= navY && y <= navY + navHeight && x >= 0 && x <= CONFIG.width) {
     const itemWidth = CONFIG.width / 4;
     const tabIndex = Math.floor(x / itemWidth);
     const tabs = ['home', 'business', 'social', 'mall'];
-    console.log(`[底部导航] Y:${navY}, 点击 Y:${y}, Tab 索引:${tabIndex}, 结果:${tabs[tabIndex]}`);
+    console.log(`[底部导航] Y 范围:${navY}-${navY + navHeight}, 点击 Y:${y}, Tab 索引:${tabIndex}, 结果:${tabs[tabIndex]}`);
     return { type: 'tab', tab: tabs[tabIndex] };
+  }
+  
+  // 如果 Y 超出 Canvas 范围，忽略
+  if (y < 0 || y > CONFIG.height) {
+    console.log(`[触摸] Y 超出 Canvas 范围 (${y.toFixed(1)} > ${CONFIG.height})`);
+    return null;
   }
   
   // 经营 Tab 子导航检测
