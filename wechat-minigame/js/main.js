@@ -1,17 +1,20 @@
 /**
  * 我的中餐厅 - 主逻辑
- * v1.2 版本
+ * v1.2 Canvas 版本
  */
+
+// 导入渲染引擎
+import './canvas-renderer';
 
 // 游戏全局状态
 const GameGlobal = {
   // 玩家数据
   player: {
-    gold: 1000,      // 金币
-    gem: 10,         // 宝石
-    level: 1,        // 餐厅等级
-    exp: 0,          // 经验值
-    reputation: 100  // 声誉
+    gold: 1000,
+    gem: 10,
+    level: 1,
+    exp: 0,
+    reputation: 100
   },
   
   // 时间系统
@@ -19,31 +22,46 @@ const GameGlobal = {
     hour: 10,
     minute: 0,
     day: 1,
-    period: 'morning'  // morning, afternoon, evening
+    period: 'morning'
   },
   
   // 厨师数据
-  chefs: [],
+  chefs: [
+    { id: 1, name: '小王', level: 1, speed: 10, cuisine: '川菜' }
+  ],
   
   // 菜品数据
-  dishes: [],
+  dishes: [
+    { id: 1, name: '炒饭', level: 1, price: 10, cuisine: '川菜', unlocked: true },
+    { id: 2, name: '宫保鸡丁', level: 1, price: 25, cuisine: '川菜', unlocked: true },
+    { id: 3, name: '麻婆豆腐', level: 1, price: 18, cuisine: '川菜', unlocked: false }
+  ],
   
-  // 家具数据
-  furnitures: [],
+  // 当前 Tab
+  activeTab: 'home',
   
-  // 任务系统
-  tasks: []
+  // Canvas
+  canvas: null
 };
 
 // 初始化游戏
 function init() {
-  console.log('我的中餐厅 v1.2 启动');
+  console.log('我的中餐厅 v1.2 Canvas 版启动');
   
   // 加载存档
   loadGame();
   
+  // 初始化 Canvas
+  GameGlobal.canvas = CanvasRenderer.init();
+  
+  // 首次渲染
+  render();
+  
   // 启动游戏循环
   startGameLoop();
+  
+  // 绑定触摸事件
+  bindTouchEvents();
 }
 
 // 加载游戏存档
@@ -51,44 +69,35 @@ function loadGame() {
   try {
     const savedData = wx.getStorageSync('restaurant_save');
     if (savedData) {
-      Object.assign(GameGlobal, JSON.parse(savedData));
+      const saved = JSON.parse(savedData);
+      Object.assign(GameGlobal.player, saved.player);
+      Object.assign(GameGlobal.time, saved.time);
+      if (saved.chefs) GameGlobal.chefs = saved.chefs;
+      if (saved.dishes) GameGlobal.dishes = saved.dishes;
       console.log('游戏存档加载成功');
-    } else {
-      // 新游戏初始化
-      initNewGame();
     }
   } catch (e) {
     console.error('加载存档失败:', e);
-    initNewGame();
   }
-}
-
-// 新游戏初始化
-function initNewGame() {
-  console.log('开始新游戏');
-  
-  // 初始菜品
-  GameGlobal.dishes = [
-    { id: 1, name: '炒饭', level: 1, price: 10, cuisine: '川菜', unlocked: true },
-    { id: 2, name: '宫保鸡丁', level: 1, price: 25, cuisine: '川菜', unlocked: true },
-    { id: 3, name: '麻婆豆腐', level: 1, price: 18, cuisine: '川菜', unlocked: false }
-  ];
-  
-  // 初始厨师
-  GameGlobal.chefs = [
-    { id: 1, name: '小王', level: 1, speed: 10, cuisine: '川菜' }
-  ];
-  
-  saveGame();
 }
 
 // 保存游戏存档
 function saveGame() {
   try {
-    wx.setStorageSync('restaurant_save', JSON.stringify(GameGlobal));
+    wx.setStorageSync('restaurant_save', JSON.stringify({
+      player: GameGlobal.player,
+      time: GameGlobal.time,
+      chefs: GameGlobal.chefs,
+      dishes: GameGlobal.dishes
+    }));
   } catch (e) {
     console.error('保存存档失败:', e);
   }
+}
+
+// 渲染
+function render() {
+  CanvasRenderer.render(GameGlobal, GameGlobal.activeTab);
 }
 
 // 游戏主循环
@@ -96,7 +105,14 @@ function startGameLoop() {
   // 每分钟更新一次游戏时间
   setInterval(() => {
     updateTime();
+    render();
   }, 60000);
+  
+  // 自动收益（每 5 秒）
+  setInterval(() => {
+    autoEarnings();
+    render();
+  }, 5000);
 }
 
 // 更新时间
@@ -107,12 +123,10 @@ function updateTime() {
     GameGlobal.time.hour += 1;
     
     if (GameGlobal.time.hour >= 22) {
-      // 打烊
       endOfDay();
     }
   }
   
-  // 更新时段
   if (GameGlobal.time.hour < 12) {
     GameGlobal.time.period = 'morning';
   } else if (GameGlobal.time.hour < 17) {
@@ -121,7 +135,14 @@ function updateTime() {
     GameGlobal.time.period = 'evening';
   }
   
-  console.log(`游戏时间：${GameGlobal.time.hour}:${GameGlobal.time.minute} ${GameGlobal.time.period}`);
+  console.log(`游戏时间：${GameGlobal.time.hour}:${GameGlobal.time.minute}`);
+}
+
+// 自动收益
+function autoEarnings() {
+  const earnings = GameGlobal.chefs.length * 10;
+  GameGlobal.player.gold += earnings;
+  console.log(`自动收益：+${earnings} 金币`);
 }
 
 // 一天结束
@@ -129,22 +150,64 @@ function endOfDay() {
   console.log('打烊了！结算今日收益...');
   saveGame();
   
-  // 重置时间到第二天
   GameGlobal.time.hour = 10;
   GameGlobal.time.minute = 0;
   GameGlobal.time.day += 1;
   
   wx.showModal({
     title: '打烊啦',
-    content: `第 ${GameGlobal.time.day} 天结束，今日收益已结算`,
+    content: `第 ${GameGlobal.time.day} 天结束，当前金币：${GameGlobal.player.gold}`,
     showCancel: false
   });
+}
+
+// 绑定触摸事件
+function bindTouchEvents() {
+  wx.onTouchStart((res) => {
+    const touch = res.touches[0];
+    const x = touch.clientX;
+    const y = touch.clientY;
+    
+    const action = CanvasRenderer.handleTouch(x, y, GameGlobal, GameGlobal.activeTab);
+    
+    if (action) {
+      if (action.type === 'tab') {
+        GameGlobal.activeTab = action.tab;
+        render();
+      } else if (action.type === 'action') {
+        handleAction(action.action);
+      }
+    }
+  });
+}
+
+// 处理动作
+function handleAction(actionName) {
+  switch (actionName) {
+    case 'collectEarnings':
+      const earnings = GameGlobal.chefs.length * 50;
+      GameGlobal.player.gold += earnings;
+      wx.showToast({
+        title: `收取 ${earnings} 金币`,
+        icon: 'success'
+      });
+      saveGame();
+      render();
+      break;
+  }
+}
+
+// 切换场景
+function switchScene(scene) {
+  GameGlobal.activeTab = scene;
+  render();
 }
 
 // 导出全局函数
 window.GameGlobal = GameGlobal;
 window.init = init;
 window.saveGame = saveGame;
+window.switchScene = switchScene;
 
 // 启动游戏
 init();
