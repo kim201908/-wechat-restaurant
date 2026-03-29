@@ -687,9 +687,9 @@ function startCustomerAnimation() {
         GameGlobal.customers.push({
           id: Date.now(),
           x: 320,  // 从右侧门口进入
-          y: 280,  // 门口位置
+          y: 150,  // 首页地板区域（Y: 130-240）
           targetX: 50 + Math.random() * 200,  // 随机目标位置
-          targetY: 80 + Math.random() * 150,
+          targetY: 80 + Math.random() * 100,  // 在地板区域内走动
           state: 'entering',  // entering, walking_in, ordering, eating, leaving, walking_out
           walkFrame: 0,  // 走路动画帧
           orderTime: 0,
