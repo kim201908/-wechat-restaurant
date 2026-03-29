@@ -716,7 +716,8 @@ function handleTouch(x, y, gameData, activeTab) {
   
   // 经营 Tab 子导航检测（4 个 Tab：餐厅/厨房/采购/外卖）
   if (activeTab === 'business') {
-    if (y >= 90 && y <= 140 && x >= 16 && x <= CONFIG.width - 16) {
+    // 修复：子导航渲染位置 = statusBarHeight(44) + 40 = 84，高度 36，所以范围是 80-125（留余量）
+    if (y >= 80 && y <= 125 && x >= 16 && x <= CONFIG.width - 16) {
       const subTabWidth = (CONFIG.width - 32) / 4;  // 4 个 Tab
       const subTabIndex = Math.floor((x - 16) / subTabWidth);
       const subTabs = ['restaurant', 'kitchen', 'shopping', 'delivery'];
@@ -789,19 +790,15 @@ function handleTouch(x, y, gameData, activeTab) {
   
   // 社交 Tab 子导航检测
   if (activeTab === 'social') {
-    console.log(`[社交子导航] 检测：Y=${y}, X=${x}, 范围 90-140`);
-    if (y >= 90 && y <= 140 && x >= 16 && x <= CONFIG.width - 16) {
+    // 修复：子导航渲染位置 = statusBarHeight(44) + 40 = 84，高度 36，所以范围是 80-125（留余量）
+    if (y >= 80 && y <= 125 && x >= 16 && x <= CONFIG.width - 16) {
       const subTabWidth = (CONFIG.width - 32) / 3;
       const subTabIndex = Math.floor((x - 16) / subTabWidth);
       const subTabs = ['friends', 'rankings', 'events'];
       
-      console.log(`[社交子导航] ✅ 索引:${subTabIndex}, 结果:${subTabs[subTabIndex]}`);
-      
       if (subTabIndex >= 0 && subTabIndex < 3) {
         return { type: 'subtab', subtab: subTabs[subTabIndex], tabGroup: 'social' };
       }
-    } else {
-      console.log('[社交子导航] ❌ 不在范围内');
     }
     
     // 好友页：复制好友码按钮
@@ -815,19 +812,15 @@ function handleTouch(x, y, gameData, activeTab) {
   
   // 商城 Tab 子导航检测
   if (activeTab === 'mall') {
-    console.log(`[商城子导航] 检测：Y=${y}, X=${x}, 范围 90-140`);
-    if (y >= 90 && y <= 140 && x >= 16 && x <= CONFIG.width - 16) {
+    // 修复：子导航渲染位置 = statusBarHeight(44) + 40 = 84，高度 36，所以范围是 80-125（留余量）
+    if (y >= 80 && y <= 125 && x >= 16 && x <= CONFIG.width - 16) {
       const subTabWidth = (CONFIG.width - 32) / 3;
       const subTabIndex = Math.floor((x - 16) / subTabWidth);
       const subTabs = ['recommend', 'items', 'decorations'];
       
-      console.log(`[商城子导航] ✅ 索引:${subTabIndex}, 结果:${subTabs[subTabIndex]}`);
-      
       if (subTabIndex >= 0 && subTabIndex < 3) {
         return { type: 'subtab', subtab: subTabs[subTabIndex], tabGroup: 'mall' };
       }
-    } else {
-      console.log('[商城子导航] ❌ 不在范围内');
     }
     
     // 推荐页：首充礼包购买
