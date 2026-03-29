@@ -679,17 +679,17 @@ window.switchScene = switchScene;
 
 // 启动顾客动画系统
 function startCustomerAnimation() {
-  // 每 3 秒生成一个顾客
+  // 每 2 秒生成一个顾客
   setInterval(() => {
     if (GameGlobal.customers.length < GameGlobal.maxCustomers) {
-      // 50% 概率生成顾客
-      if (Math.random() > 0.5) {
+      // 70% 概率生成顾客
+      if (Math.random() > 0.3) {
         GameGlobal.customers.push({
           id: Date.now(),
           x: 320,  // 从右侧门口进入
-          y: 150,  // 首页地板区域（Y: 130-240）
-          targetX: 50 + Math.random() * 200,  // 随机目标位置
-          targetY: 80 + Math.random() * 100,  // 在地板区域内走动
+          y: 180,  // 首页地板区域（Y: 130-240）
+          targetX: 50 + Math.random() * 250,  // 随机目标位置（扩大范围）
+          targetY: 100 + Math.random() * 120,  // 在地板区域内走动（扩大范围）
           state: 'entering',  // entering, walking_in, ordering, eating, leaving, walking_out
           walkFrame: 0,  // 走路动画帧
           orderTime: 0,
@@ -697,13 +697,13 @@ function startCustomerAnimation() {
         });
       }
     }
-  }, 3000);
+  }, 2000);
   
-  // 每 100ms 更新顾客位置
+  // 每 50ms 更新顾客位置（更流畅）
   setInterval(() => {
     updateCustomers();
     render();
-  }, 100);
+  }, 50);
 }
 
 // 检测家具障碍物
@@ -793,10 +793,10 @@ function updateCustomers() {
         const distEnter = Math.sqrt(dxEnter * dxEnter + dyEnter * dyEnter);
         
         if (distEnter > 5) {
-          moveWithAvoidance(customer, customer.targetX, customer.targetY, 1.5);
-          customer.walkFrame += 0.3;  // 走路动画
+          moveWithAvoidance(customer, customer.targetX, customer.targetY, 3);  // 提高速度
+          customer.walkFrame += 0.5;  // 走路动画
         } else {
-          customer.state = 'waiting_food';  // 改为 waiting_food
+          customer.state = 'waiting_food';
           customer.waitFoodTime = Date.now();
         }
         break;
@@ -841,8 +841,8 @@ function updateCustomers() {
         const distLeave = Math.sqrt(dxLeave * dxLeave + dyLeave * dyLeave);
         
         if (distLeave > 5) {
-          moveWithAvoidance(customer, doorX, doorY, 2);
-          customer.walkFrame += 0.3;  // 走路动画
+          moveWithAvoidance(customer, doorX, doorY, 3);  // 提高速度
+          customer.walkFrame += 0.5;  // 走路动画
         } else {
           customer.state = 'walking_out';
         }
@@ -857,8 +857,8 @@ function updateCustomers() {
         const distCash = Math.sqrt(dxCash * dxCash + dyCash * dyCash);
         
         if (distCash > 10) {
-          moveWithAvoidance(customer, cashierX, cashierY, 1.5);
-          customer.walkFrame += 0.3;
+          moveWithAvoidance(customer, cashierX, cashierY, 3);  // 提高速度
+          customer.walkFrame += 0.5;
         } else {
           // 到达收银台，付款
           customer.state = 'paying';
@@ -905,7 +905,7 @@ function updateCustomers() {
         
         if (customer && customer.state === 'waiting_food') {
           // 移动到顾客位置（带避障）
-          const arrived = moveWithAvoidance(waiter, waiter.targetX, waiter.targetY, 2);
+          const arrived = moveWithAvoidance(waiter, waiter.targetX, waiter.targetY, 3);  // 提高速度
           
           if (!arrived) {
             // 到达顾客位置，上菜
@@ -926,7 +926,7 @@ function updateCustomers() {
         }
       } else if (waiter.state === 'returning') {
         // 返回服务区
-        const arrived = moveWithAvoidance(waiter, waiter.returnTargetX, waiter.returnTargetY, 2);
+        const arrived = moveWithAvoidance(waiter, waiter.returnTargetX, waiter.returnTargetY, 3);  // 提高速度
         
         if (!arrived) {
           waiter.state = 'idle';

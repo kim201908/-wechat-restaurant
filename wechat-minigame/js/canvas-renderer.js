@@ -550,12 +550,11 @@ function renderBusinessKitchen(y, height, gameData) {
     ctx.fill();
     
     ctx.fillStyle = isActive ? '#FFFFFF' : CONFIG.colors.gray;
-    ctx.font = 'bold 12px sans-serif';
+    ctx.font = 'bold 11px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    // 防止文字重合：截断过长的文本
-    const label = tab.label.length > 6 ? tab.label.substring(0, 6) + '...' : tab.label;
-    ctx.fillText(label, x + empTabWidth / 2, empTabY + 16);
+    // 显示完整文字，不截断
+    ctx.fillText(tab.label, x + empTabWidth / 2, empTabY + 16);
   });
   
   const selectedTab = gameData.selectedEmpTab || 'chefs';
@@ -716,8 +715,8 @@ function handleTouch(x, y, gameData, activeTab) {
   
   // 经营 Tab 子导航检测（4 个 Tab：餐厅/厨房/采购/外卖）
   if (activeTab === 'business') {
-    // 修复：子导航渲染位置 = statusBarHeight(44) + 40 = 84，高度 36，所以范围是 80-125（留余量）
-    if (y >= 80 && y <= 125 && x >= 16 && x <= CONFIG.width - 16) {
+    // 修复：子导航渲染位置 = statusBarHeight(44) + 40 = 84，高度 36，范围 84-120，扩大检测范围到 80-140
+    if (y >= 80 && y <= 140 && x >= 16 && x <= CONFIG.width - 16) {
       const subTabWidth = (CONFIG.width - 32) / 4;  // 4 个 Tab
       const subTabIndex = Math.floor((x - 16) / subTabWidth);
       const subTabs = ['restaurant', 'kitchen', 'shopping', 'delivery'];
@@ -729,13 +728,12 @@ function handleTouch(x, y, gameData, activeTab) {
     
     // 经营 - 厨房：员工管理
     if (gameData.businessSubTab === 'kitchen') {
-      const baseY = CONFIG.statusBarHeight;
-      
-      // 员工分类 Tab 点击（Y: 60-92）
+      // 修复：员工分类 Tab 渲染位置 = contentY(44) + 20 = 64，高度 32，范围 64-96，检测范围 60-100
+      const empTabBaseY = CONFIG.statusBarHeight + 20;
       const empTabs = ['chefs', 'waiters', 'cashiers'];
       const empTabWidth = (CONFIG.width - 48) / 3;
       
-      if (y >= baseY + 60 && y <= baseY + 92 && x >= 16 && x <= CONFIG.width - 16) {
+      if (y >= empTabBaseY && y <= empTabBaseY + 36 && x >= 16 && x <= CONFIG.width - 16) {
         const tabIndex = Math.floor((x - 16) / empTabWidth);
         if (tabIndex >= 0 && tabIndex < 3) {
           return { type: 'action', action: 'selectEmpTab', empTab: empTabs[tabIndex] };
