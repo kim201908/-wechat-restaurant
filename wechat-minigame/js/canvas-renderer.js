@@ -553,7 +553,9 @@ function renderBusinessKitchen(y, height, gameData) {
     ctx.font = 'bold 12px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(tab.label, x + empTabWidth / 2, empTabY + 16);
+    // 防止文字重合：截断过长的文本
+    const label = tab.label.length > 6 ? tab.label.substring(0, 6) + '...' : tab.label;
+    ctx.fillText(label, x + empTabWidth / 2, empTabY + 16);
   });
   
   const selectedTab = gameData.selectedEmpTab || 'chefs';
