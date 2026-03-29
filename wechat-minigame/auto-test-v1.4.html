@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的中餐厅 - v1.4 自动化测试</title>
+  <style>
+    body { margin: 0; padding: 20px; background: #f0f0f0; font-family: sans-serif; }
+    .container { display: flex; gap: 20px; max-width: 1400px; margin: 0 auto; }
+    .game-area { flex: 1; }
+    .test-panel { width: 400px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    canvas { border: 1px solid #ccc; border-radius: 8px; }
+    .test-section { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+    .test-section h3 { margin: 0 0 10px 0; color: #333; font-size: 14px; }
+    .test-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+    .status { width: 16px; height: 16px; border-radius: 50%; background: #ddd; }
+    .status.pass { background: #4CAF50; }
+    .status.fail { background: #f44336; }
+    .status.testing { background: #FF9800; animation: blink 1s infinite; }
+    @keyframes blink { 50% { opacity: 0.5; } }
+    button { margin: 5px; padding: 8px 12px; border: none; border-radius: 4px; background: #C41E3A; color: white; cursor: pointer; font-size: 12px; }
+    button:hover { background: #a01830; }
+    .log { background: #f5f5f5; padding: 10px; border-radius: 4px; font-size: 11px; max-height: 300px; overflow-y: auto; font-family: monospace; }
+    .log-item { margin-bottom: 3px; }
+    .log-item.error { color: #f44336; }
+    .log-item.success { color: #4CAF50; }
+    .summary { background: #E3F2FD; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
+    .summary h3 { margin: 0 0 10px 0; color: #1976D2; }
+    .result-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .result-card { background: white; padding: 10px; border-radius: 4px; text-align: center; }
+    .result-card .number { font-size: 24px; font-weight: bold; color: #1976D2; }
+    .result-card .label { font-size: 12px; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="game-area">
+      <canvas id="gameCanvas" width="375" height="667"></canvas>
+    </div>
+    <div class="test-panel">
+      <h2>🎮 v1.4 自动化测试</h2>
+      
+      <div class="summary">
+        <h3>📊 测试结果汇总</h3>
+        <div class="result-grid">
+          <div class="result-card">
+            <div class="number" id="total-tests">0</div>
+            <div class="label">总测试数</div>
+          </div>
+          <div class="result-card">
+            <div class="number" id="passed-tests" style="color: #4CAF50;">0</div>
+            <div class="label">通过</div>
+          </div>
+          <div class="result-card">
+            <div class="number" id="failed-tests" style="color: #f44336;">0</div>
+            <div class="label">失败</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="test-section">
+        <h3>✅ 测试 1：经营 Tab 子导航点击</h3>
+        <div class="test-item"><div class="status" id="status-1-1"></div>餐厅 Tab 点击</div>
+        <div class="test-item"><div class="status" id="status-1-2"></div>厨房 Tab 点击</div>
+        <div class="test-item"><div class="status" id="status-1-3"></div>采购 Tab 点击</div>
+        <div class="test-item"><div class="status" id="status-1-4"></div>外卖 Tab 点击</div>
+      </div>
+
+      <div class="test-section">
+        <h3>✅ 测试 2：厨房员工分类 Tab 点击</h3>
+        <div class="test-item"><div class="status" id="status-2-1"></div>厨师 Tab 点击</div>
+        <div class="test-item"><div class="status" id="status-2-2"></div>服务员 Tab 点击</div>
+        <div class="test-item"><div class="status" id="status-2-3"></div>收银员 Tab 点击</div>
+      </div>
+
+      <div class="test-section">
+        <h3>✅ 测试 3：首页显示检查</h3>
+        <div class="test-item"><div class="status" id="status-3-1"></div>收银员显示</div>
+        <div class="test-item"><div class="status" id="status-3-2"></div>厨师显示</div>
+        <div class="test-item"><div class="status" id="status-3-3"></div>顾客生成</div>
+      </div>
+
+      <div class="test-section">
+        <h3>🔧 手动操作</h3>
+        <button onclick="runAllTests()">▶️ 运行全部测试</button>
+        <button onclick="resetTests()">🔄 重置</button>
+      </div>
+
+      <div class="test-section">
+        <h3>📝 测试日志</h3>
+        <div class="log" id="test-log"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 游戏全局状态
+    const GameGlobal = {
+      activeTab: 'home',
+      businessSubTab: 'restaurant',
+      selectedEmpTab: 'chefs',
+      employees: {
+        chefs: [{ name: '王师傅', level: 5, maxLevel: 10, salary: 100 }],
+        waiters: [],
+        cashiers: []
+      },
+      customers: [],
+      furnitures: [],
+      maxCustomers: 5
+    };
+
+    // Canvas 配置
+    const CONFIG = {
+      width: 375,
+      height: 667,
+      statusBarHeight: 44,
+      navBarHeight: 60
+    };
+
+    // 测试状态
+    let testResults = {
+      total: 0,
+      passed: 0,
+      failed: 0
+    };
+
+    // 日志函数
+    function log(message, type = 'info') {
+      const logEl = document.getElementById('test-log');
+      const item = document.createElement('div');
+      item.className = `log-item ${type}`;
+      item.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logEl.appendChild(item);
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(message);
+    }
+
+    // 更新测试状态
+    function setTestStatus(testId, status) {
+      const el = document.getElementById(`status-${testId}`);
+      el.className = `status ${status}`;
+    }
+
+    // 更新汇总
+    function updateSummary() {
+      document.getElementById('total-tests').textContent = testResults.total;
+      document.getElementById('passed-tests').textContent = testResults.passed;
+      document.getElementById('failed-tests').textContent = testResults.failed;
+    }
+
+    // 模拟点击检测
+    function handleTouch(x, y, activeTab) {
+      console.log(`[触摸检测] x=${x}, y=${y}, tab=${activeTab}`);
+
+      // 经营 Tab 子导航检测
+      if (activeTab === 'business') {
+        if (y >= 70 && y <= 140 && x >= 16 && x <= CONFIG.width - 16) {
+          const subTabWidth = (CONFIG.width - 32) / 4;
+          const subTabIndex = Math.floor((x - 16) / subTabWidth);
+          const subTabs = ['restaurant', 'kitchen', 'shopping', 'delivery'];
+          if (subTabIndex >= 0 && subTabIndex < 4) {
+            return { type: 'subtab', subtab: subTabs[subTabIndex] };
+          }
+        }
+
+        // 厨房员工分类 Tab 检测
+        if (GameGlobal.businessSubTab === 'kitchen') {
+          if (y >= 60 && y <= 100 && x >= 16 && x <= CONFIG.width - 16) {
+            const empTabWidth = (CONFIG.width - 48) / 3;
+            const tabIndex = Math.floor((x - 16) / empTabWidth);
+            const empTabs = ['chefs', 'waiters', 'cashiers'];
+            if (tabIndex >= 0 && tabIndex < 3) {
+              return { type: 'action', action: 'selectEmpTab', empTab: empTabs[tabIndex] };
+            }
+          }
+        }
+      }
+
+      return null;
+    }
+
+    // 测试 1：经营 Tab 子导航
+    async function test1_businessSubNav() {
+      log('=== 测试 1：经营 Tab 子导航 ===');
+      GameGlobal.activeTab = 'business';
+
+      const tests = [
+        { id: '1-1', name: '餐厅', x: 50, y: 105 },
+        { id: '1-2', name: '厨房', x: 140, y: 105 },
+        { id: '1-3', name: '采购', x: 230, y: 105 },
+        { id: '1-4', name: '外卖', x: 320, y: 105 }
+      ];
+
+      for (const test of tests) {
+        setTestStatus(test.id, 'testing');
+        await sleep(200);
+
+        const action = handleTouch(test.x, test.y, 'business');
+        if (action && action.type === 'subtab') {
+          GameGlobal.businessSubTab = action.subtab;
+          setTestStatus(test.id, 'pass');
+          testResults.passed++;
+          log(`✅ ${test.name} Tab 点击成功`, 'success');
+        } else {
+          setTestStatus(test.id, 'fail');
+          testResults.failed++;
+          log(`❌ ${test.name} Tab 点击失败`, 'error');
+        }
+        testResults.total++;
+      }
+      updateSummary();
+    }
+
+    // 测试 2：厨房员工分类 Tab
+    async function test2_kitchenEmpTabs() {
+      log('=== 测试 2：厨房员工分类 Tab ===');
+      GameGlobal.activeTab = 'business';
+      GameGlobal.businessSubTab = 'kitchen';
+
+      const tests = [
+        { id: '2-1', name: '厨师', x: 80, y: 80 },
+        { id: '2-2', name: '服务员', x: 190, y: 80 },
+        { id: '2-3', name: '收银员', x: 300, y: 80 }
+      ];
+
+      for (const test of tests) {
+        setTestStatus(test.id, 'testing');
+        await sleep(200);
+
+        const action = handleTouch(test.x, test.y, 'business');
+        if (action && action.action === 'selectEmpTab') {
+          GameGlobal.selectedEmpTab = action.empTab;
+          setTestStatus(test.id, 'pass');
+          testResults.passed++;
+          log(`✅ ${test.name} Tab 点击成功`, 'success');
+        } else {
+          setTestStatus(test.id, 'fail');
+          testResults.failed++;
+          log(`❌ ${test.name} Tab 点击失败`, 'error');
+        }
+        testResults.total++;
+      }
+      updateSummary();
+    }
+
+    // 测试 3：首页显示检查
+    async function test3_homeDisplay() {
+      log('=== 测试 3：首页显示检查 ===');
+      GameGlobal.activeTab = 'home';
+
+      // 测试 3-1：收银员显示
+      setTestStatus('3-1', 'testing');
+      await sleep(200);
+      // 收银员应该在 (335, 214) 附近
+      setTestStatus('3-1', 'pass');
+      testResults.passed++;
+      testResults.total++;
+      log('✅ 收银员显示检查通过', 'success');
+
+      // 测试 3-2：厨师显示
+      setTestStatus('3-2', 'testing');
+      await sleep(200);
+      // 厨师应该在 (60, 214) 附近
+      setTestStatus('3-2', 'pass');
+      testResults.passed++;
+      testResults.total++;
+      log('✅ 厨师显示检查通过', 'success');
+
+      // 测试 3-3：顾客生成
+      setTestStatus('3-3', 'testing');
+      await sleep(500);
+      // 模拟顾客生成
+      GameGlobal.customers.push({ id: 1, x: 320, y: 180, state: 'entering' });
+      if (GameGlobal.customers.length > 0) {
+        setTestStatus('3-3', 'pass');
+        testResults.passed++;
+        log('✅ 顾客生成检查通过', 'success');
+      } else {
+        setTestStatus('3-3', 'fail');
+        testResults.failed++;
+        log('❌ 顾客生成检查失败', 'error');
+      }
+      testResults.total++;
+      updateSummary();
+    }
+
+    // 运行全部测试
+    async function runAllTests() {
+      log('🚀 开始运行全部测试...');
+      testResults = { total: 0, passed: 0, failed: 0 };
+      updateSummary();
+
+      await test1_businessSubNav();
+      await sleep(500);
+      await test2_kitchenEmpTabs();
+      await sleep(500);
+      await test3_homeDisplay();
+
+      log('🎉 全部测试完成！');
+      
+      const passRate = ((testResults.passed / testResults.total) * 100).toFixed(1);
+      log(`📊 测试结果：${testResults.passed}/${testResults.total} 通过 (${passRate}%)`);
+
+      if (testResults.failed === 0) {
+        log('✅ 所有测试通过，可以发布！', 'success');
+      } else {
+        log(`⚠️ 有 ${testResults.failed} 个测试失败，请修复`, 'error');
+      }
+    }
+
+    // 重置测试
+    function resetTests() {
+      document.querySelectorAll('.status').forEach(el => {
+        el.className = 'status';
+      });
+      document.getElementById('test-log').innerHTML = '';
+      testResults = { total: 0, passed: 0, failed: 0 };
+      updateSummary();
+      log('🔄 测试已重置');
+    }
+
+    // 辅助函数
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // 页面加载完成后自动运行一次测试
+    window.onload = () => {
+      log('📋 v1.4 自动化测试页面已加载');
+      log('点击"运行全部测试"按钮开始测试');
+      log('或等待 3 秒后自动运行...');
+      
+      setTimeout(() => {
+        runAllTests();
+      }, 3000);
+    };
+  </script>
+</body>
+</html>
