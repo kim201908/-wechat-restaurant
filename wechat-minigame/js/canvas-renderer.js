@@ -300,6 +300,20 @@ function renderHome(y, height, gameData) {
     ctx.fillText('去商店购买家具装饰餐厅吧！', CONFIG.width / 2, y + 150);
   }
   
+  // 收银员（固定在右侧收银台）
+  ctx.font = '28px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('👨‍💼', CONFIG.width - 40, y + 170);
+  ctx.font = '24px sans-serif';
+  ctx.fillText('💰', CONFIG.width - 40, y + 200);
+  
+  // 厨师（在厨房区域）
+  ctx.font = '28px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('👨‍🍳', 60, y + 170);
+  ctx.font = '24px sans-serif';
+  ctx.fillText('🍳', 60, y + 200);
+  
   // 服务员动画系统（带端菜效果）
   if (gameData.employees && gameData.employees.waiters && gameData.employees.waiters.length > 0) {
     gameData.employees.waiters.forEach((waiter, index) => {
@@ -715,11 +729,16 @@ function handleTouch(x, y, gameData, activeTab) {
   
   // 经营 Tab 子导航检测（4 个 Tab：餐厅/厨房/采购/外卖）
   if (activeTab === 'business') {
-    // 修复：子导航渲染位置 = statusBarHeight(44) + 40 = 84，高度 36，范围 84-120，扩大检测范围到 80-140
-    if (y >= 80 && y <= 140 && x >= 16 && x <= CONFIG.width - 16) {
+    // 子导航渲染位置 = statusBarHeight(44) + 40 = 84，高度 36，范围 84-120
+    // 扩大检测范围到 70-140（上下各留 10-14px 余量）
+    console.log(`[经营子导航检测] y=${y}, x=${x}, businessSubTab=${gameData.businessSubTab}`);
+    
+    if (y >= 70 && y <= 140 && x >= 16 && x <= CONFIG.width - 16) {
       const subTabWidth = (CONFIG.width - 32) / 4;  // 4 个 Tab
       const subTabIndex = Math.floor((x - 16) / subTabWidth);
       const subTabs = ['restaurant', 'kitchen', 'shopping', 'delivery'];
+      
+      console.log(`[经营子导航] 索引=${subTabIndex}, 结果=${subTabs[subTabIndex]}`);
       
       if (subTabIndex >= 0 && subTabIndex < 4) {
         return { type: 'subtab', subtab: subTabs[subTabIndex], tabGroup: 'business' };
@@ -728,26 +747,24 @@ function handleTouch(x, y, gameData, activeTab) {
     
     // 经营 - 厨房：员工管理
     if (gameData.businessSubTab === 'kitchen') {
-      // 修复：员工分类 Tab 渲染位置 = contentY(44) + 20 = 64，高度 32，范围 64-96，检测范围 60-100
-      const empTabBaseY = CONFIG.statusBarHeight + 20;
+      // 员工分类 Tab：渲染位置 = statusBarHeight(44) + 20 = 64，高度 32，范围 64-96
+      // 点击检测的 y 是绝对坐标（从 Canvas 顶部），所以直接用 60-100 范围
+      const empTabBaseY = 60;  // 留 4px 余量
+      const empTabEndY = 100;
       const empTabs = ['chefs', 'waiters', 'cashiers'];
       const empTabWidth = (CONFIG.width - 48) / 3;
       
-      if (y >= empTabBaseY && y <= empTabBaseY + 36 && x >= 16 && x <= CONFIG.width - 16) {
+      console.log(`[厨房员工 Tab 检测] y=${y}, 范围=${empTabBaseY}-${empTabEndY}, x=${x}`);
+      
+      if (y >= empTabBaseY && y <= empTabEndY && x >= 16 && x <= CONFIG.width - 16) {
         const tabIndex = Math.floor((x - 16) / empTabWidth);
+        console.log(`[厨房员工 Tab] 点击索引=${tabIndex}, 结果=${empTabs[tabIndex]}`);
         if (tabIndex >= 0 && tabIndex < 3) {
           return { type: 'action', action: 'selectEmpTab', empTab: empTabs[tabIndex] };
         }
       }
       
-      // 雇佣员工按钮
-      const selectedTab = gameData.selectedEmpTab || 'chefs';
-      const employees = gameData.employees?.[selectedTab] || [];
-      const btnY = baseY + 95 + employees.length * 60 + 10;
-      
-      if (y >= btnY && y <= btnY + 40 && x >= 16 && x <= CONFIG.width - 16) {
-        return { type: 'action', action: 'recruitEmployee', empType: selectedTab };
-      }
+      // 雇佣员工按钮（后续修复）
     }
     
     // 经营 - 外卖：生成订单按钮
